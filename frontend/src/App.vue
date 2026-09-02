@@ -1,7 +1,7 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import HeroSection from './components/HeroSection.vue'
 </script>
 
 <template>
-  <HelloWorld />
+  <router-view />
 </template>

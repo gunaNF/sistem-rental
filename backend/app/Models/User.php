@@ -2,31 +2,32 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens; // <--- Import ini
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable; // <--- Tambahkan HasApiTokens di sini
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $fillable = [
+        'nama',
+        'email',
+        'kata_sandi',
+        'peran',
+        'no_telepon',
+        'alamat',
+    ];
+
+    protected $hidden = [
+        'kata_sandi',
+        'remember_token',
+    ];
+
+    // Relasi ke Transaksi (1 User punya Banyak Transaksi)
+    public function rentals()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(Rental::class, 'id_pengguna');
     }
 }

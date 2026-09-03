@@ -10,15 +10,20 @@ class Item extends Model
     use HasFactory;
 
     protected $fillable = [
+        'id_kategori', 
         'nama_barang',
-        'kategori',
         'deskripsi',
-        'harga_per_hari',
         'stok',
-        'foto_barang',
+        'harga_per_hari',
+        'gambar',
     ];
 
-    // Relasi ke Detail Transaksi
+    // Relasi: Barang milik Satu Kategori
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'id_kategori');
+    }
+
     public function rentalItems()
     {
         return $this->hasMany(RentalItem::class, 'id_barang');

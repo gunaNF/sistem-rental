@@ -1,12 +1,19 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const cartCount = ref(0)
+
+// Function navigasi langsung ke route login
+const goToLogin = () => {
+  router.push('/login')
+}
 </script>
 
 <template>
   <div class="hero-wrapper">
-    <!-- Top Bar Cerah -->
+    <!-- Top Bar -->
     <div class="top-bar">
       <div class="top-info">
         <span>📞 0878-1200-0155</span>
@@ -15,25 +22,28 @@ const cartCount = ref(0)
       </div>
       <div class="top-promo">
         <span>Lebih dari <strong>100+</strong> alat camping siap pakai!</span>
-        <button class="btn-top">Cek Katalog →</button>
+        <button type="button" class="btn-top">Cek Katalog →</button>
       </div>
     </div>
 
-    <!-- Header Navbar Bersih & Terang -->
+    <!-- Header Navbar -->
     <header class="navbar">
       <div class="logo">
-        🏕️ forrest.<span>rent</span>
+        <router-link to="/" class="logo-link">🏕️ forrest.<span>rent</span></router-link>
       </div>
 
       <nav class="nav-links">
-        <a href="#">Kategori ▾</a>
+        <a href="#kategori" @click.prevent>Kategori ▾</a>
         <router-link to="/cara-sewa">Cara Sewa</router-link>
-        <a href="#">Lokasi Pick-up</a>
-        <a href="#">Kontak</a>
+        <a href="#lokasi" @click.prevent>Lokasi Pick-up</a>
+        <a href="#kontak" @click.prevent>Kontak</a>
       </nav>
 
       <div class="nav-actions">
-        <router-link to="/login" class="btn-login">Masuk</router-link>
+        <!-- Tombol Masuk dengan event handler -->
+        <button type="button" @click="goToLogin" class="btn-login">
+          Masuk
+        </button>
         
         <div class="cart-btn">
           🛒
@@ -74,14 +84,14 @@ const cartCount = ref(0)
 
       <!-- Action Button -->
       <div class="cta-box">
-        <button class="btn-primary">Mulai Petualangan !</button>
+        <button type="button" class="btn-primary">Mulai Petualangan !</button>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-/* Main Container - Tanpa min-height 100vh agar gambar pas di bawah */
+/* Main Container */
 .hero-wrapper {
   background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)),
               url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000') center/cover no-repeat;
@@ -139,9 +149,13 @@ const cartCount = ref(0)
   justify-content: space-between;
   align-items: center;
   padding: 20px 6%;
+  position: relative;
+  z-index: 50;
 }
 
-.logo {
+.logo-link {
+  text-decoration: none;
+  color: #ffffff;
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -174,11 +188,26 @@ const cartCount = ref(0)
   gap: 20px;
 }
 
+/* Styling Tombol Masuk */
 .btn-login {
+  background: #2ec4b6;
   color: #ffffff;
-  text-decoration: none;
+  border: none;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-block;
+  box-shadow: 0 4px 10px rgba(46, 196, 182, 0.3);
+  position: relative;
+  z-index: 100;
+}
+
+.btn-login:hover {
+  background: #25a094;
+  transform: translateY(-1px);
 }
 
 .cart-btn {
@@ -212,7 +241,7 @@ const cartCount = ref(0)
   justify-content: center;
 }
 
-/* Main Hero Content - Padding bawah 80px membuat ruang background aman */
+/* Main Hero Content */
 .hero-content {
   padding: 40px 6% 80px 6%;
   max-width: 750px;
@@ -269,7 +298,7 @@ const cartCount = ref(0)
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-/* Buttons - Ukuran sedikit dirapikan & terangkat proporsional */
+/* Buttons */
 .cta-box {
   display: flex;
   gap: 16px;
@@ -285,17 +314,5 @@ const cartCount = ref(0)
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  border: 2px solid #ffffff;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
 }
 </style>

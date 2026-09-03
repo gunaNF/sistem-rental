@@ -7,7 +7,7 @@ import FooterSection from '@/components/FooterSection.vue'
 
 const route = useRoute()
 
-// Cek apakah user berada di halaman Home / Landing Page
+// Brand & Footer HANYA akan dipanggil jika posisi rute di Halaman Utama ('/')
 const isHomePage = computed(() => {
   return route.path === '/'
 })
@@ -15,9 +15,10 @@ const isHomePage = computed(() => {
 
 <template>
   <div id="app">
+    <!-- RouterView merender halaman aktif secara dinamis (/login, /register, /admin, dll) -->
     <RouterView />
 
-    <!-- Hanya tampil HANYA di halaman Home (/) -->
+    <!-- Komponen tambahan khusus untuk Landing Page -->
     <template v-if="isHomePage">
       <BrandSection />
       <FooterSection />
@@ -26,9 +27,16 @@ const isHomePage = computed(() => {
 </template>
 
 <style>
+/* Reset global style */
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
+  padding: 0;
   font-family: 'Plus Jakarta Sans', sans-serif;
   background-color: #f8fafc;
+  color: #0f172a;
 }
 </style>

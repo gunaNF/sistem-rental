@@ -1,20 +1,41 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
+import api from '@/services/api'
 
-// Sample data dummy (nanti diganti dengan fetch API dari backend Laravel)
-const items = ref([
-  { id: 1, nama_item: 'Tenda Arpenaz 4.1', kategori: 'Tenda', harga_sewa: 75000, stok: 5 },
-  { id: 2, nama_item: 'Carrier Eiger 60L', kategori: 'Tas', harga_sewa: 45000, stok: 8 },
-  { id: 3, nama_item: 'Kompor Portable Novar', kategori: 'Cooking Gear', harga_sewa: 20000, stok: 12 },
-  { id: 4, nama_item: 'Sleeping Bag Deuter', kategori: 'Perlengkapan', harga_sewa: 25000, stok: 10 }
-])
+const items = ref([])
+const isLoading = ref(true)
+const errorMessage = ref('')
 
-const deleteItem = (id) => {
-  if (confirm('Apakah Anda yakin ingin menghapus item ini?')) {
-    items.value = items.value.filter(item => item.id !== id)
+// READ: Fetch data barang dari API Laravel
+const fetchItems = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/items')
+    items.value = response.data.data || response.data
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || 'Gagal mengambil data items dari server.'
+  } finally {
+    isLoading.value = false
   }
 }
+
+// DELETE: Hapus item dari database via API
+const deleteItem = async (id, namaItem) => {
+  if (!confirm(`Apakah Anda yakin ingin menghapus "${namaItem}"?`)) return
+
+  try {
+    await api.delete(`/items/${id}`)
+    items.value = items.value.filter(item => item.id !== id)
+  } catch (error) {
+    alert(error.response?.data?.message || 'Gagal menghapus item.')
+  }
+}
+
+onMounted(() => {
+  fetchItems()
+})
 </script>
 
 <template>
@@ -31,6 +52,11 @@ const deleteItem = (id) => {
       </router-link>
     </div>
 
+    <!-- Alert Error -->
+    <div v-if="errorMessage" class="error-alert">
+      ⚠️ {{ errorMessage }}
+    </div>
+
     <!-- Table Container -->
     <div class="table-card">
       <table class="crud-table">
@@ -45,11 +71,24 @@ const deleteItem = (id) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.id">
+          <!-- State Loading -->
+          <tr v-if="isLoading">
+            <td colspan="6" class="text-center empty-msg">Memuat data items...</td>
+          </tr>
+
+          <!-- State Data Kosong -->
+          <tr v-else-if="items.length === 0">
+            <td colspan="6" class="text-center empty-msg">Belum ada data item.</td>
+          </tr>
+
+          <!-- Data Items dari API -->
+          <tr v-else v-for="item in items" :key="item.id">
             <td class="text-muted">#{{ item.id }}</td>
-            <td class="font-bold">{{ item.nama_item }}</td>
+            <td class="font-bold">{{ item.nama_barang || item.nama_item }}</td>
             <td><span class="badge">{{ item.kategori }}</span></td>
-            <td class="price">Rp {{ item.harga_sewa.toLocaleString('id-ID') }}</td>
+            <td class="price">
+              Rp {{ Number(item.harga_sewa_per_hari || item.harga_sewa || 0).toLocaleString('id-ID') }}
+            </td>
             <td>
               <span :class="['stok-tag', item.stok > 0 ? 'stok-ada' : 'stok-habis']">
                 {{ item.stok }} unit
@@ -60,15 +99,11 @@ const deleteItem = (id) => {
                 <router-link :to="`/admin/items/edit/${item.id}`" class="btn-action edit">
                   ✏️ Edit
                 </router-link>
-                <button @click="deleteItem(item.id)" class="btn-action delete">
+                <button @click="deleteItem(item.id, item.nama_barang || item.nama_item)" class="btn-action delete">
                   🗑️ Hapus
                 </button>
               </div>
             </td>
-          </tr>
-
-          <tr v-if="items.length === 0">
-            <td colspan="6" class="text-center empty-msg">Belum ada data item.</td>
           </tr>
         </tbody>
       </table>
@@ -130,6 +165,15 @@ const deleteItem = (id) => {
 .btn-add:hover {
   background: #e08b10;
   transform: translateY(-2px);
+}
+
+.error-alert {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 
 /* TABLE STYLING */

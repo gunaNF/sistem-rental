@@ -1,20 +1,43 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 
+const isLoading = ref(false)
+const errorMessage = ref('')
+
 const form = ref({
-  nama_item: '',
+  nama_barang: '',
   kategori: '',
-  harga_sewa: '',
+  harga_sewa_per_hari: '',
   stok: ''
 })
 
-const handleSubmit = () => {
-  // Logika simpan data ke backend / state nanti di sini
-  alert('Data berhasil disimpan!')
-  router.push('/admin/items')
+const handleSubmit = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    await api.post('/items', {
+      nama_barang: form.value.nama_barang,
+      kategori: form.value.kategori,
+      harga_sewa_per_hari: Number(form.value.harga_sewa_per_hari),
+      stok: Number(form.value.stok)
+    })
+
+    alert('Item berhasil disimpan!')
+    router.push('/admin/items')
+  } catch (error) {
+    if (error.response && error.response.data) {
+      errorMessage.value = error.response.data.message || 'Gagal menyimpan item.'
+    } else {
+      errorMessage.value = 'Gagal terhubung ke server backend.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -25,10 +48,15 @@ const handleSubmit = () => {
       <h2>Tambah Item Baru</h2>
     </div>
 
+    <!-- Alert Error -->
+    <div v-if="errorMessage" class="error-alert">
+      ⚠️ {{ errorMessage }}
+    </div>
+
     <form @submit.prevent="handleSubmit" class="item-form">
       <div class="form-group">
         <label>Nama Item</label>
-        <input v-model="form.nama_item" type="text" placeholder="Masukkan nama alat" required />
+        <input v-model="form.nama_barang" type="text" placeholder="Masukkan nama alat" required />
       </div>
 
       <div class="form-group">
@@ -38,15 +66,17 @@ const handleSubmit = () => {
 
       <div class="form-group">
         <label>Harga Sewa (Per Hari)</label>
-        <input v-model="form.harga_sewa" type="number" placeholder="Contoh: 50000" required />
+        <input v-model.number="form.harga_sewa_per_hari" type="number" min="0" placeholder="Contoh: 50000" required />
       </div>
 
       <div class="form-group">
         <label>Stok</label>
-        <input v-model="form.stok" type="number" placeholder="Contoh: 10" required />
+        <input v-model.number="form.stok" type="number" min="1" placeholder="Contoh: 10" required />
       </div>
 
-      <button type="submit" class="btn-submit">Simpan Item</button>
+      <button type="submit" class="btn-submit" :disabled="isLoading">
+        {{ isLoading ? 'Memproses...' : 'Simpan Item' }}
+      </button>
     </form>
   </div>
 </template>
@@ -74,6 +104,15 @@ const handleSubmit = () => {
   font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
+  margin-bottom: 20px;
+}
+
+.error-alert {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 
@@ -121,5 +160,10 @@ const handleSubmit = () => {
 
 .btn-submit:hover {
   background: #e08b10;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

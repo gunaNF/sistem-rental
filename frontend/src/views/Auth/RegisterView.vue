@@ -1,41 +1,49 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-// State form login
+const router = useRouter()
+
+// State Form
+const name = ref('')
 const email = ref('')
+const phone = ref('')
 const password = ref('')
-const showPassword = ref(false) // State untuk intip password
+const passwordConfirmation = ref('')
+
+const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// Fungsi toggle intip kata sandi
-const togglePasswordVisibility = () => {
+const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
-// Fungsi Submit Login ke Backend Laravel
-const handleLogin = async () => {
+// Handle Register ke API Laravel
+const handleRegister = async () => {
+  if (password.value !== passwordConfirmation.value) {
+    errorMessage.value = 'Konfirmasi kata sandi tidak cocok!'
+    return
+  }
+
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const response = await axios.post('http://localhost:8000/api/login', {
+    const response = await axios.post('http://localhost:8000/api/register', {
+      name: name.value,
       email: email.value,
-      password: password.value
+      phone: phone.value,
+      password: password.value,
+      password_confirmation: passwordConfirmation.value
     })
 
-    const token = response.data.token
-    const user = response.data.user
-
-    localStorage.setItem('auth_token', token)
-    localStorage.setItem('user_data', JSON.stringify(user))
-
-    alert(`Selamat datang kembali, ${user.name || 'User'}!`)
-    window.location.href = '/'
+    alert('Pendaftaran berhasil! Silakan masuk dengan akun Anda.')
+    router.push('/login')
   } catch (error) {
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || 'Email atau password salah.'
+      errorMessage.value = error.response.data.message || 'Gagal mendaftar. Periksa kembali data Anda.'
     } else {
       errorMessage.value = 'Gagal terhubung ke server backend.'
     }
@@ -46,26 +54,35 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="login-wrapper">
-    <!-- Overlay gelap transparan -->
+  <div class="auth-wrapper">
     <div class="bg-overlay"></div>
 
-    <div class="login-box">
-      <!-- Tombol Kembali ke Dashboard -->
+    <div class="auth-box">
       <router-link to="/" class="back-link">← Kembali ke Beranda</router-link>
 
-      <div class="login-header">
+      <div class="auth-header">
         <div class="logo">🌲 forrest<span>rent.</span></div>
-        <h2>Masuk ke Akun</h2>
-        <p>Silakan masukkan email dan kata sandi Anda.</p>
+        <h2>Buat Akun Baru</h2>
+        <p>Bergabunglah untuk mulai menyewa peralatan outdoor premium.</p>
       </div>
 
-      <!-- Pesan Error -->
       <div v-if="errorMessage" class="error-alert">
         ⚠️ {{ errorMessage }}
       </div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleRegister" class="auth-form">
+        <div class="form-group">
+          <label for="name">Nama Lengkap</label>
+          <input
+            type="text"
+            id="name"
+            v-model="name"
+            placeholder="Nama Lengkap"
+            class="form-control"
+            required
+          />
+        </div>
+
         <div class="form-group">
           <label for="email">Email</label>
           <input
@@ -78,6 +95,19 @@ const handleLogin = async () => {
           />
         </div>
 
+        <div class="form-group">
+          <label for="phone">Nomor WhatsApp</label>
+          <input
+            type="tel"
+            id="phone"
+            v-model="phone"
+            placeholder="081234567890"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <!-- Input Kata Sandi -->
         <div class="form-group">
           <label for="password">Kata Sandi</label>
           <div class="password-wrapper">
@@ -92,7 +122,30 @@ const handleLogin = async () => {
             <button 
               type="button" 
               class="toggle-password" 
-              @click="togglePasswordVisibility"
+              @click="togglePassword"
+              tabindex="-1"
+            >
+              {{ showPassword ? '👁️' : '🙈' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Konfirmasi Kata Sandi (Menggunakan Fitur Intip yang Sama) -->
+        <div class="form-group">
+          <label for="password_confirmation">Konfirmasi Kata Sandi</label>
+          <div class="password-wrapper">
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              id="password_confirmation"
+              v-model="passwordConfirmation"
+              placeholder="••••••••"
+              class="form-control"
+              required
+            />
+            <button 
+              type="button" 
+              class="toggle-password" 
+              @click="togglePassword"
               tabindex="-1"
             >
               {{ showPassword ? '👁️' : '🙈' }}
@@ -101,22 +154,21 @@ const handleLogin = async () => {
         </div>
 
         <button type="submit" class="btn-submit" :disabled="isLoading">
-          <span v-if="isLoading">Memproses...</span>
-          <span v-else>Masuk</span>
+          <span v-if="isLoading">Mendaftarkan...</span>
+          <span v-else>Daftar Akun</span>
         </button>
       </form>
 
-      <!-- ⬇️ Posisinya di dalam login-box ⬇️ -->
       <div class="auth-footer">
-        Belum punya akun? 
-        <router-link to="/register" class="link">Daftar sekarang</router-link>
+        Sudah punya akun? 
+        <router-link to="/login" class="link">Masuk di sini</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-wrapper {
+.auth-wrapper {
   min-height: 100vh;
   width: 100vw;
   display: flex;
@@ -124,7 +176,7 @@ const handleLogin = async () => {
   justify-content: center;
   position: relative;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: 20px;
+  padding: 40px 20px;
   background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center / cover;
 }
 
@@ -134,18 +186,18 @@ const handleLogin = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(8, 6, 13, 0.45);
+  background: rgba(8, 6, 13, 0.5);
   backdrop-filter: blur(4px);
   z-index: 1;
 }
 
-.login-box {
+.auth-box {
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.96);
   color: #111827;
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   padding: 36px 30px;
   border-radius: 20px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
@@ -157,7 +209,7 @@ const handleLogin = async () => {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   transition: color 0.2s ease;
 }
 
@@ -165,30 +217,30 @@ const handleLogin = async () => {
   color: #111827;
 }
 
-.login-header {
+.auth-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .logo {
   font-size: 1.6rem;
   font-weight: 900;
   color: #132a1e;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .logo span {
   color: #ff9f1c;
 }
 
-.login-header h2 {
-  font-size: 1.4rem;
+.auth-header h2 {
+  font-size: 1.35rem;
   font-weight: 800;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
-.login-header p {
-  font-size: 0.85rem;
+.auth-header p {
+  font-size: 0.82rem;
   color: #6b7280;
 }
 
@@ -199,35 +251,34 @@ const handleLogin = async () => {
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   text-align: left;
 }
 
 .form-group label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #374151;
 }
 
-/* Component Input */
 .form-control {
   width: 100%;
-  padding: 12px 14px;
+  padding: 11px 14px;
   border: 1.5px solid #e5e7eb;
   border-radius: 10px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   background-color: #f9fafb;
   color: #111827;
   outline: none;
@@ -241,11 +292,7 @@ const handleLogin = async () => {
   box-shadow: 0 0 0 3px rgba(255, 159, 28, 0.15);
 }
 
-.form-control::placeholder {
-  color: #9ca3af;
-}
-
-/* Override background biru dari Autofill Browser */
+/* Fix Autofill Browser */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
@@ -255,7 +302,6 @@ input:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Input Password & Toggle Eye */
 .password-wrapper {
   position: relative;
   display: flex;
@@ -274,12 +320,12 @@ input:-webkit-autofill:active {
   border: none;
   cursor: pointer;
   font-size: 1.1rem;
+  opacity: 0.7;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   user-select: none;
-  opacity: 0.7;
   transition: opacity 0.2s;
 }
 
@@ -291,12 +337,12 @@ input:-webkit-autofill:active {
   background: #132a1e;
   color: #ffffff;
   border: none;
-  padding: 13px;
+  padding: 12px;
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 8px;
+  margin-top: 6px;
   transition: background-color 0.2s;
 }
 
@@ -309,7 +355,6 @@ input:-webkit-autofill:active {
   cursor: not-allowed;
 }
 
-/* Styling Footer Link Register */
 .auth-footer {
   text-align: center;
   margin-top: 20px;

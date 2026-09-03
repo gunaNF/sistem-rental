@@ -30,4 +30,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Rental::class, 'id_pengguna');
     }
+
+    public function getAuthPassword()
+    {
+        return $this->kata_sandi;
+    }
 }

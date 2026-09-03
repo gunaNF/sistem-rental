@@ -11,10 +11,10 @@ const cartCount = ref(0)
       <div class="top-info">
         <span>📞 0878-1200-0155</span>
         <span class="divider">|</span>
-        <span>✉️ hello@forrestrent.com</span>
+        <span>@forrestrent.com</span>
       </div>
       <div class="top-promo">
-        <span>Lebih dari <strong>1.000+</strong> alat camping siap pakai!</span>
+        <span>Lebih dari <strong>100+</strong> alat camping siap pakai!</span>
         <button class="btn-top">Cek Katalog →</button>
       </div>
     </div>
@@ -22,27 +22,27 @@ const cartCount = ref(0)
     <!-- Header Navbar Bersih & Terang -->
     <header class="navbar">
       <div class="logo">
-        🏕️ forrest<span>rent.</span>
+        🏕️ forrest.<span>rent</span>
       </div>
 
       <nav class="nav-links">
         <a href="#">Kategori ▾</a>
-        <a href="#">Cara Sewa</a>
+        <router-link to="/cara-sewa">Cara Sewa</router-link>
         <a href="#">Lokasi Pick-up</a>
         <a href="#">Kontak</a>
       </nav>
 
-<div class="nav-actions">
-  <router-link to="/login" class="btn-login">Masuk</router-link>
-  
-  <div class="cart-btn">
-    🛒
-    <span class="cart-badge">{{ cartCount }}</span>
-  </div>
-</div>
+      <div class="nav-actions">
+        <router-link to="/login" class="btn-login">Masuk</router-link>
+        
+        <div class="cart-btn">
+          🛒
+          <span class="cart-badge">{{ cartCount }}</span>
+        </div>
+      </div>
     </header>
 
-    <!-- Main Hero Content (Cerah & Kontras Tinggi) -->
+    <!-- Main Hero Content -->
     <main class="hero-content">
       <div class="badge-tag">
         🌿 Sewa Alat Outdoor Tanpa Ribet
@@ -53,7 +53,8 @@ const cartCount = ref(0)
       </h1>
 
       <p class="hero-subtitle">
-        Nikmati petualangan tanpa beban dengan persewaan alat outdoor berkualitas premium.</p>
+        Nikmati petualangan tanpa beban dengan persewaan alat outdoor berkualitas premium.
+      </p>
 
       <!-- Checklist Fitur -->
       <div class="features">
@@ -67,28 +68,26 @@ const cartCount = ref(0)
         </div>
         <div class="feature-card">
           <span class="icon">📍</span>
-          <span>Khusus JADETABEK</span>
+          <span>Khusus BANSEL</span>
         </div>
       </div>
 
       <!-- Action Button -->
       <div class="cta-box">
-        <button class="btn-primary">Sikat Gear Now</button>
-        <button class="btn-secondary">Lihat Paket Camping</button>
+        <button class="btn-primary">Mulai Petualangan !</button>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-/* Main Container dengan Gambar Cerah & Light Overlay */
+/* Main Container - Tanpa min-height 100vh agar gambar pas di bawah */
 .hero-wrapper {
-  min-height: 100vh;
-  /* Pakai foto latar terang dengan overlay hitam tipis 25% saja agar teks terbaca tajam */
-  background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.35)),
-              url('https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?q=80&w=1600') center/cover no-repeat;
+  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)),
+              url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000') center/cover no-repeat;
   color: #ffffff;
   font-family: 'Plus Jakarta Sans', sans-serif;
+  width: 100%;
 }
 
 /* Top Bar Terang */
@@ -213,9 +212,9 @@ const cartCount = ref(0)
   justify-content: center;
 }
 
-/* Main Hero Content */
+/* Main Hero Content - Padding bawah 80px membuat ruang background aman */
 .hero-content {
-  padding: 80px 6% 0 6%;
+  padding: 40px 6% 80px 6%;
   max-width: 750px;
 }
 
@@ -235,7 +234,7 @@ const cartCount = ref(0)
   font-size: 3.8rem;
   font-weight: 900;
   line-height: 1.1;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   text-shadow: 0 4px 12px rgba(0,0,0,0.3);
   letter-spacing: -1px;
 }
@@ -243,7 +242,7 @@ const cartCount = ref(0)
 .hero-subtitle {
   font-size: 1.1rem;
   line-height: 1.6;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   opacity: 0.95;
   text-shadow: 0 2px 6px rgba(0,0,0,0.3);
   max-width: 600px;
@@ -253,7 +252,7 @@ const cartCount = ref(0)
 .features {
   display: flex;
   gap: 16px;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
@@ -270,7 +269,7 @@ const cartCount = ref(0)
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-/* Buttons */
+/* Buttons - Ukuran sedikit dirapikan & terangkat proporsional */
 .cta-box {
   display: flex;
   gap: 16px;
@@ -280,9 +279,9 @@ const cartCount = ref(0)
   background: #ff9f1c;
   color: #ffffff;
   border: none;
-  padding: 14px 32px;
-  border-radius: 14px;
-  font-size: 1rem;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
@@ -292,9 +291,9 @@ const cartCount = ref(0)
   background: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   border: 2px solid #ffffff;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-size: 1rem;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   backdrop-filter: blur(4px);

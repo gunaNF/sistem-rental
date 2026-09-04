@@ -1,41 +1,75 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
+
+const router = useRouter()
 
 // State form login
 const email = ref('')
 const password = ref('')
-const showPassword = ref(false) // State untuk intip password
+const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-// Fungsi toggle intip kata sandi
+// Toggle intip kata sandi
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-// Fungsi Submit Login ke Backend Laravel
+// Submit Login ke API
 const handleLogin = async () => {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const response = await axios.post('http://localhost:8000/api/login', {
+    const response = await axios.post('http://127.0.0.1:8000/api/login', {
       email: email.value,
-      password: password.value
+      kata_sandi: password.value
     })
 
-    const token = response.data.token
-    const user = response.data.user
+    // Debugging: Buka Console (F12) untuk melihat struktur JSON asli dari backend
+    console.log('Response dari Backend:', response.data)
 
-    localStorage.setItem('auth_token', token)
+    // Mengecek token dari berbagai kemungkinan kunci JSON Laravel
+    const accessToken = 
+      response.data.access_token || 
+      response.data.token || 
+      response.data.data?.access_token || 
+      response.data.data?.token || 
+      response.data.authorisation?.token
+
+    // Mengecek objek user
+    const user = 
+      response.data.user || 
+      response.data.data?.user || 
+      response.data.data || 
+      {}
+
+    if (!accessToken) {
+      throw new Error('Token autentikasi tidak ditemukan dari server.')
+    }
+
+    // Simpan data ke localStorage
+    localStorage.setItem('access_token', accessToken)
     localStorage.setItem('user_data', JSON.stringify(user))
+    localStorage.setItem('user_role', user?.peran || user?.role || 'customer')
 
-    alert(`Selamat datang kembali, ${user.name || 'User'}!`)
-    window.location.href = '/'
+    alert(`Selamat datang kembali, ${user?.nama || user?.name || 'User'}!`)
+
+    // Redirect berdasarkan peran
+    const role = user?.peran || user?.role
+    if (role === 'admin') {
+      router.push('/admin/dashboard')
+    } else {
+      router.push('/')
+    }
   } catch (error) {
+    console.error('Login Error:', error)
     if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || 'Email atau password salah.'
+      errorMessage.value = error.response.data.message || 'Email atau kata sandi salah.'
+    } else if (error.message) {
+      errorMessage.value = error.message
     } else {
       errorMessage.value = 'Gagal terhubung ke server backend.'
     }
@@ -47,284 +81,266 @@ const handleLogin = async () => {
 
 <template>
   <div class="login-wrapper">
-    <!-- Overlay gelap transparan -->
-    <div class="bg-overlay"></div>
+    <!-- Navbar Transparent -->
+    <header class="login-navbar">
+      <router-link to="/" class="logo">
+        🏕️ forrest.<span>rent</span>
+      </router-link>
+      <router-link to="/" class="btn-back">← Beranda</router-link>
+    </header>
 
-    <div class="login-box">
-      <!-- Tombol Kembali ke Dashboard -->
-      <router-link to="/" class="back-link">← Kembali ke Beranda</router-link>
-
-      <div class="login-header">
-        <div class="logo">🌲 forrest<span>rent.</span></div>
-        <h2>Masuk ke Akun</h2>
-        <p>Silakan masukkan email dan kata sandi Anda.</p>
-      </div>
-
-      <!-- Pesan Error -->
-      <div v-if="errorMessage" class="error-alert">
-        ⚠️ {{ errorMessage }}
-      </div>
-
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            placeholder="nama@email.com"
-            class="form-control"
-            required
-          />
+    <!-- Container & Card Center -->
+    <main class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <h2>Selamat Datang Kembali!</h2>
+          <p>Masuk ke akun Anda untuk mulai menyewa alat camping</p>
         </div>
 
-        <div class="form-group">
-          <label for="password">Kata Sandi</label>
-          <div class="password-wrapper">
-            <input
-              :type="showPassword ? 'text' : 'password'"
-              id="password"
-              v-model="password"
-              placeholder="••••••••"
-              class="form-control"
-              required
+        <!-- Alert Error -->
+        <div v-if="errorMessage" class="error-box">
+          ⚠️ {{ errorMessage }}
+        </div>
+
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="form-group">
+            <label for="email">Alamat Email</label>
+            <input 
+              id="email" 
+              v-model="email" 
+              type="email" 
+              placeholder="nama@email.com" 
+              required 
             />
-            <button 
-              type="button" 
-              class="toggle-password" 
-              @click="togglePasswordVisibility"
-              tabindex="-1"
-            >
-              {{ showPassword ? '👁️' : '🙈' }}
-            </button>
           </div>
+
+          <div class="form-group">
+            <label for="password">Kata Sandi</label>
+            <div class="password-input-wrapper">
+              <input 
+                id="password" 
+                v-model="password" 
+                :type="showPassword ? 'text' : 'password'" 
+                placeholder="Masukkan kata sandi" 
+                required 
+              />
+              <button 
+                type="button" 
+                class="btn-toggle-eye" 
+                @click="togglePasswordVisibility"
+              >
+                {{ showPassword ? '🙈' : '👁️' }}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-submit" :disabled="isLoading">
+            {{ isLoading ? 'Memproses...' : 'Masuk Sekarang' }}
+          </button>
+        </form>
+
+        <div class="login-footer">
+          <p>Belum punya akun? <router-link to="/register">Daftar sekarang</router-link></p>
         </div>
-
-        <button type="submit" class="btn-submit" :disabled="isLoading">
-          <span v-if="isLoading">Memproses...</span>
-          <span v-else>Masuk</span>
-        </button>
-      </form>
-
-      <!-- ⬇️ Posisinya di dalam login-box ⬇️ -->
-      <div class="auth-footer">
-        Belum punya akun? 
-        <router-link to="/register" class="link">Daftar sekarang</router-link>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
+/* Main Wrapper dengan Background Gambar Gunung */
 .login-wrapper {
   min-height: 100vh;
-  width: 100vw;
+  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
+              url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000') center/cover no-repeat fixed;
+  color: #ffffff;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  flex-direction: column;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: 20px;
-  background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center / cover;
 }
 
-.bg-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(8, 6, 13, 0.45);
-  backdrop-filter: blur(4px);
-  z-index: 1;
-}
-
-.login-box {
-  position: relative;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.95);
-  color: #111827;
-  width: 100%;
-  max-width: 400px;
-  padding: 36px 30px;
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-}
-
-.back-link {
-  display: inline-block;
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 20px;
-  transition: color 0.2s ease;
-}
-
-.back-link:hover {
-  color: #111827;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 24px;
+/* Navbar */
+.login-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 6%;
 }
 
 .logo {
   font-size: 1.6rem;
-  font-weight: 900;
-  color: #132a1e;
-  margin-bottom: 8px;
+  font-weight: 800;
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .logo span {
   color: #ff9f1c;
 }
 
+.btn-back {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Container & Glassmorphism Card */
+.login-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.login-card {
+  background: rgba(20, 25, 35, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
 .login-header h2 {
-  font-size: 1.4rem;
+  font-size: 1.7rem;
   font-weight: 800;
-  margin-bottom: 6px;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .login-header p {
-  font-size: 0.85rem;
-  color: #6b7280;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
 }
 
-.error-alert {
-  background: #fee2e2;
-  color: #dc2626;
-  padding: 10px 14px;
+/* Alert Error */
+.error-box {
+  background: rgba(220, 38, 38, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  padding: 12px;
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 20px;
 }
 
+/* Form Controls */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  text-align: left;
+  gap: 8px;
 }
 
 .form-group label {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-/* Component Input */
-.form-control {
+.form-group input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
   font-size: 0.9rem;
-  background-color: #f9fafb;
-  color: #111827;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
   outline: none;
-  transition: all 0.2s ease;
   box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
 }
 
-.form-control:focus {
-  background-color: #ffffff;
-  border-color: #ff9f1c;
-  box-shadow: 0 0 0 3px rgba(255, 159, 28, 0.15);
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.form-control::placeholder {
-  color: #9ca3af;
+.form-group input:focus {
+  border-color: #2ec4b6;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.25);
 }
 
-/* Override background biru dari Autofill Browser */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #f9fafb inset !important;
-  -webkit-text-fill-color: #111827 !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Input Password & Toggle Eye */
-.password-wrapper {
+.password-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
 }
 
-.password-wrapper .form-control {
-  padding-right: 42px;
-}
-
-.toggle-password {
+.btn-toggle-eye {
   position: absolute;
-  right: 12px;
+  right: 14px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  user-select: none;
-  opacity: 0.7;
-  transition: opacity 0.2s;
 }
 
-.toggle-password:hover {
-  opacity: 1;
-}
-
+/* Submit Button */
 .btn-submit {
-  background: #132a1e;
+  background: #2ec4b6;
   color: #ffffff;
   border: none;
-  padding: 13px;
-  border-radius: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 800;
   font-size: 0.95rem;
-  font-weight: 700;
   cursor: pointer;
-  margin-top: 8px;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  box-shadow: 0 6px 16px rgba(46, 196, 182, 0.35);
 }
 
 .btn-submit:hover {
-  background: #0d1c14;
+  background: #25a094;
+  transform: translateY(-1px);
 }
 
 .btn-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
-/* Styling Footer Link Register */
-.auth-footer {
+/* Footer Link */
+.login-footer {
+  margin-top: 24px;
   text-align: center;
-  margin-top: 20px;
-  font-size: 0.85rem;
-  color: #6b7280;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.auth-footer .link {
+.login-footer a {
   color: #ff9f1c;
   font-weight: 700;
   text-decoration: none;
-  margin-left: 4px;
 }
 
-.auth-footer .link:hover {
+.login-footer a:hover {
   text-decoration: underline;
 }
 </style>

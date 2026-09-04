@@ -1,37 +1,76 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import api from '@/services/api'
 
 const router = useRouter()
 const route = useRoute()
 
 const itemId = route.params.id
 
+const isLoading = ref(true)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+
 const form = ref({
-  nama_item: '',
+  nama_barang: '',
   kategori: '',
-  harga_sewa: '',
+  harga_sewa_per_hari: '',
   stok: ''
 })
 
-onMounted(() => {
-  // Simulasi ambil data item berdasarkan ID dari route
-  // Nanti diganti dengan request Axios: axios.get(`/api/items/${itemId}`)
-  if (itemId) {
+// Fetch detail item berdasarkan ID
+const fetchItemDetail = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get(`/items/${itemId}`)
+    const data = response.data.data || response.data
+
     form.value = {
-      nama_item: 'Tenda Arpenaz 4.1',
-      kategori: 'Tenda',
-      harga_sewa: 75000,
-      stok: 5
+      nama_barang: data.nama_barang || data.nama_item || '',
+      kategori: data.kategori || '',
+      harga_sewa_per_hari: data.harga_sewa_per_hari || data.harga_sewa || '',
+      stok: data.stok || 0
     }
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message || 'Gagal mengambil detail data item.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Update data item ke backend
+const handleUpdate = async () => {
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    await api.put(`/items/${itemId}`, {
+      nama_barang: form.value.nama_barang,
+      kategori: form.value.kategori,
+      harga_sewa_per_hari: Number(form.value.harga_sewa_per_hari),
+      stok: Number(form.value.stok)
+    })
+
+    alert(`Item #${itemId} berhasil diperbarui!`)
+    router.push('/admin/items')
+  } catch (error) {
+    if (error.response && error.response.data) {
+      errorMessage.value = error.response.data.message || 'Gagal memperbarui item.'
+    } else {
+      errorMessage.value = 'Gagal terhubung ke server backend.'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onMounted(() => {
+  if (itemId) {
+    fetchItemDetail()
   }
 })
-
-const handleUpdate = () => {
-  // Logika update ke backend Laravel
-  alert(`Item ID #${itemId} berhasil diperbarui!`)
-  router.push('/admin/items')
-}
 </script>
 
 <template>
@@ -42,11 +81,21 @@ const handleUpdate = () => {
       <p class="subtitle">Ubah informasi alat outdoor di bawah ini.</p>
     </div>
 
-    <form @submit.prevent="handleUpdate" class="item-form">
+    <!-- Alert Error -->
+    <div v-if="errorMessage" class="error-alert">
+      ⚠️ {{ errorMessage }}
+    </div>
+
+    <!-- Loading Fetch Data -->
+    <div v-if="isLoading" class="loading-state">
+      Memuat detail item...
+    </div>
+
+    <form v-else @submit.prevent="handleUpdate" class="item-form">
       <div class="form-group">
         <label>Nama Item</label>
         <input 
-          v-model="form.nama_item" 
+          v-model="form.nama_barang" 
           type="text" 
           placeholder="Masukkan nama alat" 
           required 
@@ -66,8 +115,9 @@ const handleUpdate = () => {
       <div class="form-group">
         <label>Harga Sewa (Per Hari)</label>
         <input 
-          v-model="form.harga_sewa" 
+          v-model.number="form.harga_sewa_per_hari" 
           type="number" 
+          min="0"
           placeholder="Contoh: 50000" 
           required 
         />
@@ -76,8 +126,9 @@ const handleUpdate = () => {
       <div class="form-group">
         <label>Stok Barang</label>
         <input 
-          v-model="form.stok" 
+          v-model.number="form.stok" 
           type="number" 
+          min="0"
           placeholder="Contoh: 10" 
           required 
         />
@@ -85,7 +136,9 @@ const handleUpdate = () => {
 
       <div class="form-actions">
         <router-link to="/admin/items" class="btn-cancel">Batal</router-link>
-        <button type="submit" class="btn-submit">Simpan Perubahan</button>
+        <button type="submit" class="btn-submit" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Menyimpan...' : 'Simpan Perubahan' }}
+        </button>
       </div>
     </form>
   </div>
@@ -123,6 +176,22 @@ const handleUpdate = () => {
   font-size: 0.85rem;
   margin-top: 4px;
   margin-bottom: 24px;
+}
+
+.error-alert {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 30px 0;
+  color: #64748b;
+  font-weight: 600;
 }
 
 .item-form {
@@ -189,5 +258,10 @@ const handleUpdate = () => {
 
 .btn-submit:hover {
   background: #25a094;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

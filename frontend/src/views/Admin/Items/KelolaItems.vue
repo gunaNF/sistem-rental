@@ -63,6 +63,7 @@ onMounted(() => {
         <thead>
           <tr>
             <th width="60">ID</th>
+            <th width="80">Foto</th>
             <th>Nama Item</th>
             <th>Kategori</th>
             <th>Harga Sewa / Hari</th>
@@ -73,17 +74,27 @@ onMounted(() => {
         <tbody>
           <!-- State Loading -->
           <tr v-if="isLoading">
-            <td colspan="6" class="text-center empty-msg">Memuat data items...</td>
+            <td colspan="7" class="text-center empty-msg">Memuat data items...</td>
           </tr>
 
           <!-- State Data Kosong -->
           <tr v-else-if="items.length === 0">
-            <td colspan="6" class="text-center empty-msg">Belum ada data item.</td>
+            <td colspan="7" class="text-center empty-msg">Belum ada data item.</td>
           </tr>
 
           <!-- Data Items dari API -->
           <tr v-else v-for="item in items" :key="item.id">
             <td class="text-muted">#{{ item.id }}</td>
+            
+            <!-- Kolom Foto Barang -->
+            <td>
+              <img 
+                :src="item.foto_barang ? `http://localhost:8000/storage/${item.foto_barang}` : 'https://via.placeholder.com/60?text=No+Img'" 
+                alt="Foto Item" 
+                class="item-img-thumb"
+              />
+            </td>
+
             <td class="font-bold">{{ item.nama_barang || item.nama_item }}</td>
             
             <!-- Mengambil kategori dari relasi category -->
@@ -221,6 +232,14 @@ onMounted(() => {
 
 .crud-table tbody tr:hover {
   background-color: #f8fafc;
+}
+
+.item-img-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .text-muted { color: #94a3b8; }

@@ -1,36 +1,58 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 
 const router = useRouter()
 
 const isLoading = ref(false)
+const isLoadingCategories = ref(false)
 const errorMessage = ref('')
+const validationErrors = ref(null)
+const categories = ref([])
 
 const form = ref({
   nama_barang: '',
-  kategori: '',
-  harga_sewa_per_hari: '',
-  stok: ''
+  id_kategori: '',
+  harga_per_hari: '',
+  stok: '',
+  deskripsi: ''
 })
+
+// Fetch daftar kategori untuk dropdown
+const fetchCategories = async () => {
+  isLoadingCategories.value = true
+  try {
+    const response = await api.get('/categories')
+    categories.value = response.data.data || []
+  } catch (error) {
+    console.error('Gagal mengambil daftar kategori:', error)
+  } finally {
+    isLoadingCategories.value = false
+  }
+}
 
 const handleSubmit = async () => {
   isLoading.value = true
   errorMessage.value = ''
+  validationErrors.value = null
 
   try {
     await api.post('/items', {
       nama_barang: form.value.nama_barang,
-      kategori: form.value.kategori,
-      harga_sewa_per_hari: Number(form.value.harga_sewa_per_hari),
-      stok: Number(form.value.stok)
+      id_kategori: form.value.id_kategori,
+      harga_per_hari: Number(form.value.harga_per_hari),
+      stok: Number(form.value.stok),
+      deskripsi: form.value.deskripsi || null
     })
 
     alert('Item berhasil disimpan!')
     router.push('/admin/items')
   } catch (error) {
-    if (error.response && error.response.data) {
+    if (error.response && error.response.status === 422) {
+      errorMessage.value = error.response.data.message || 'Validasi gagal'
+      validationErrors.value = error.response.data.errors
+    } else if (error.response && error.response.data) {
       errorMessage.value = error.response.data.message || 'Gagal menyimpan item.'
     } else {
       errorMessage.value = 'Gagal terhubung ke server backend.'
@@ -39,6 +61,10 @@ const handleSubmit = async () => {
     isLoading.value = false
   }
 }
+
+onMounted(() => {
+  fetchCategories()
+})
 </script>
 
 <template>
@@ -50,7 +76,12 @@ const handleSubmit = async () => {
 
     <!-- Alert Error -->
     <div v-if="errorMessage" class="error-alert">
-      ⚠️ {{ errorMessage }}
+      <p style="margin: 0; font-weight: 700;">⚠️ {{ errorMessage }}</p>
+      <ul v-if="validationErrors" class="error-list">
+        <li v-for="(messages, field) in validationErrors" :key="field">
+          <strong>{{ field }}</strong>: {{ messages.join(', ') }}
+        </li>
+      </ul>
     </div>
 
     <form @submit.prevent="handleSubmit" class="item-form">
@@ -61,12 +92,23 @@ const handleSubmit = async () => {
 
       <div class="form-group">
         <label>Kategori</label>
-        <input v-model="form.kategori" type="text" placeholder="Contoh: Tenda, Tas" required />
+        <select v-model="form.id_kategori" required :disabled="isLoadingCategories">
+          <option value="" disabled>
+            {{ isLoadingCategories ? 'Memuat kategori...' : '-- Pilih Kategori --' }}
+          </option>
+          <option 
+            v-for="cat in categories" 
+            :key="cat.id" 
+            :value="cat.id"
+          >
+            {{ cat.nama_kategori || cat.nama }}
+          </option>
+        </select>
       </div>
 
       <div class="form-group">
         <label>Harga Sewa (Per Hari)</label>
-        <input v-model.number="form.harga_sewa_per_hari" type="number" min="0" placeholder="Contoh: 50000" required />
+        <input v-model.number="form.harga_per_hari" type="number" min="0" placeholder="Contoh: 50000" required />
       </div>
 
       <div class="form-group">
@@ -112,8 +154,13 @@ const handleSubmit = async () => {
   color: #dc2626;
   padding: 12px 16px;
   border-radius: 8px;
-  font-weight: 600;
   margin-bottom: 20px;
+}
+
+.error-list {
+  margin: 8px 0 0 16px;
+  padding: 0;
+  font-size: 0.85rem;
 }
 
 .item-form {
@@ -134,15 +181,18 @@ const handleSubmit = async () => {
   color: #475569;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   padding: 10px 14px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.9rem;
   outline: none;
+  background-color: #ffffff;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
   border-color: #2ec4b6;
 }
 

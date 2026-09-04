@@ -9,6 +9,7 @@ import DashboardView from '@/views/Admin/DashboardView.vue'
 import KelolaItems from '@/views/Admin/Items/KelolaItems.vue'
 import TambahItems from '@/views/Admin/Items/TambahItems.vue'
 import EditItems from '@/views/Admin/Items/EditItems.vue'
+import CategoriesView from '@/views/Admin/CategoriesView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
@@ -26,7 +27,8 @@ const routes = [
       { path: 'dashboard', name: 'admin-dashboard', component: DashboardView },
       { path: 'items', name: 'kelola-items', component: KelolaItems },
       { path: 'items/tambah', name: 'tambah-items', component: TambahItems },
-      { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true }
+      { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true },
+      { path: 'kategori', name: 'kelola-kategori', component: CategoriesView }
     ]
   }
 ]

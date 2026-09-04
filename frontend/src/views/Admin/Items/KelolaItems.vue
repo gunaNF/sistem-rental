@@ -85,10 +85,19 @@ onMounted(() => {
           <tr v-else v-for="item in items" :key="item.id">
             <td class="text-muted">#{{ item.id }}</td>
             <td class="font-bold">{{ item.nama_barang || item.nama_item }}</td>
-            <td><span class="badge">{{ item.kategori }}</span></td>
-            <td class="price">
-              Rp {{ Number(item.harga_sewa_per_hari || item.harga_sewa || 0).toLocaleString('id-ID') }}
+            
+            <!-- Mengambil kategori dari relasi category -->
+            <td>
+              <span class="badge">
+                {{ item.category?.nama_kategori || item.category?.nama || '-' }}
+              </span>
             </td>
+
+            <!-- Mengambil harga per hari dari field database -->
+            <td class="price">
+              Rp {{ Number(item.harga_per_hari || item.harga_sewa_per_hari || 0).toLocaleString('id-ID') }}
+            </td>
+
             <td>
               <span :class="['stok-tag', item.stok > 0 ? 'stok-ada' : 'stok-habis']">
                 {{ item.stok }} unit

@@ -14,13 +14,15 @@ const isLoadingCategories = ref(false)
 const errorMessage = ref('')
 const validationErrors = ref(null)
 const categories = ref([])
+const imagePreview = ref(null)
 
 const form = ref({
   nama_barang: '',
   id_kategori: '',
   harga_per_hari: '',
   stok: '',
-  deskripsi: ''
+  deskripsi: '',
+  foto_barang: null
 })
 
 // Fetch daftar kategori untuk dropdown
@@ -49,12 +51,27 @@ const fetchItemDetail = async () => {
       id_kategori: data.id_kategori || '',
       harga_per_hari: data.harga_per_hari || data.harga_sewa_per_hari || '',
       stok: data.stok || 0,
-      deskripsi: data.deskripsi || ''
+      deskripsi: data.deskripsi || '',
+      foto_barang: null
+    }
+
+    // Tampilkan preview foto yang sudah ada dari database
+    if (data.foto_barang) {
+      imagePreview.value = `http://localhost:8000/storage/${data.foto_barang}`
     }
   } catch (error) {
     errorMessage.value = error.response?.data?.message || 'Gagal mengambil detail data item.'
   } finally {
     isLoading.value = false
+  }
+}
+
+// Handle saat memilih file baru
+const handleFileChange = (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    form.value.foto_barang = file
+    imagePreview.value = URL.createObjectURL(file)
   }
 }
 
@@ -64,13 +81,24 @@ const handleUpdate = async () => {
   errorMessage.value = ''
   validationErrors.value = null
 
+  // Gunakan FormData untuk mengirim berkas gambar
+  const formData = new FormData()
+  formData.append('_method', 'PUT') // Method spoofing untuk Laravel multipart POST
+  formData.append('nama_barang', form.value.nama_barang)
+  formData.append('id_kategori', form.value.id_kategori)
+  formData.append('harga_per_hari', form.value.harga_per_hari)
+  formData.append('stok', form.value.stok)
+  formData.append('deskripsi', form.value.deskripsi || '')
+
+  // Jika ada foto baru yang diunggah
+  if (form.value.foto_barang) {
+    formData.append('foto_barang', form.value.foto_barang)
+  }
+
   try {
-    await api.put(`/items/${itemId}`, {
-      nama_barang: form.value.nama_barang,
-      id_kategori: form.value.id_kategori,
-      harga_per_hari: Number(form.value.harga_per_hari),
-      stok: Number(form.value.stok),
-      deskripsi: form.value.deskripsi || null
+    // Kirim menggunakan method POST dengan spoofing PUT
+    await api.post(`/items/${itemId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
     })
 
     alert(`Item #${itemId} berhasil diperbarui!`)
@@ -147,6 +175,15 @@ onMounted(async () => {
         </select>
       </div>
 
+      <!-- Field Upload Foto -->
+      <div class="form-group">
+        <label>Foto Produk (Opsional)</label>
+        <input type="file" @change="handleFileChange" accept="image/*" />
+        <div v-if="imagePreview" class="preview-container">
+          <img :src="imagePreview" alt="Preview Foto" class="preview-img" />
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Harga Sewa (Per Hari)</label>
         <input 
@@ -167,6 +204,11 @@ onMounted(async () => {
           placeholder="Contoh: 10" 
           required 
         />
+      </div>
+
+      <div class="form-group">
+        <label>Deskripsi (Opsional)</label>
+        <textarea v-model="form.deskripsi" rows="3" placeholder="Masukkan deskripsi barang..."></textarea>
       </div>
 
       <div class="form-actions">
@@ -253,20 +295,35 @@ onMounted(async () => {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   padding: 11px 14px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.9rem;
   outline: none;
   background-color: #ffffff;
+  font-family: inherit;
   transition: border-color 0.2s;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   border-color: #2ec4b6;
   box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.15);
+}
+
+.preview-container {
+  margin-top: 8px;
+}
+
+.preview-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
 }
 
 .form-actions {

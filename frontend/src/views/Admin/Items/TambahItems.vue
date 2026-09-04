@@ -10,13 +10,15 @@ const isLoadingCategories = ref(false)
 const errorMessage = ref('')
 const validationErrors = ref(null)
 const categories = ref([])
+const imagePreview = ref(null)
 
 const form = ref({
   nama_barang: '',
   id_kategori: '',
   harga_per_hari: '',
   stok: '',
-  deskripsi: ''
+  deskripsi: '',
+  foto_barang: null
 })
 
 // Fetch daftar kategori untuk dropdown
@@ -32,18 +34,37 @@ const fetchCategories = async () => {
   }
 }
 
+// Handle perubahan file foto
+const handleFileChange = (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    form.value.foto_barang = file
+    imagePreview.value = URL.createObjectURL(file)
+  }
+}
+
 const handleSubmit = async () => {
   isLoading.value = true
   errorMessage.value = ''
   validationErrors.value = null
 
+  // Gunakan FormData untuk mengirim berkas file
+  const formData = new FormData()
+  formData.append('nama_barang', form.value.nama_barang)
+  formData.append('id_kategori', form.value.id_kategori)
+  formData.append('harga_per_hari', form.value.harga_per_hari)
+  formData.append('stok', form.value.stok)
+  formData.append('deskripsi', form.value.deskripsi || '')
+
+  if (form.value.foto_barang) {
+    formData.append('foto_barang', form.value.foto_barang)
+  }
+
   try {
-    await api.post('/items', {
-      nama_barang: form.value.nama_barang,
-      id_kategori: form.value.id_kategori,
-      harga_per_hari: Number(form.value.harga_per_hari),
-      stok: Number(form.value.stok),
-      deskripsi: form.value.deskripsi || null
+    await api.post('/items', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     })
 
     alert('Item berhasil disimpan!')
@@ -106,6 +127,15 @@ onMounted(() => {
         </select>
       </div>
 
+      <!-- Input Field Foto Produk -->
+      <div class="form-group">
+        <label>Foto Produk</label>
+        <input type="file" @change="handleFileChange" accept="image/*" />
+        <div v-if="imagePreview" class="preview-container">
+          <img :src="imagePreview" alt="Preview Foto" class="preview-img" />
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Harga Sewa (Per Hari)</label>
         <input v-model.number="form.harga_per_hari" type="number" min="0" placeholder="Contoh: 50000" required />
@@ -114,6 +144,11 @@ onMounted(() => {
       <div class="form-group">
         <label>Stok</label>
         <input v-model.number="form.stok" type="number" min="1" placeholder="Contoh: 10" required />
+      </div>
+
+      <div class="form-group">
+        <label>Deskripsi (Opsional)</label>
+        <textarea v-model="form.deskripsi" rows="3" placeholder="Masukkan deskripsi barang..."></textarea>
       </div>
 
       <button type="submit" class="btn-submit" :disabled="isLoading">
@@ -182,18 +217,33 @@ onMounted(() => {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   padding: 10px 14px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 0.9rem;
   outline: none;
   background-color: #ffffff;
+  font-family: inherit;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   border-color: #2ec4b6;
+}
+
+.preview-container {
+  margin-top: 8px;
+}
+
+.preview-img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
 }
 
 .btn-submit {

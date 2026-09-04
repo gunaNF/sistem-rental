@@ -15,6 +15,7 @@ class Item extends Model
         'deskripsi',
         'stok',
         'harga_per_hari',
+        'foto_barang', 
         'gambar',
     ];
 

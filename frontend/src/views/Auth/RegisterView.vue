@@ -31,7 +31,7 @@ const handleRegister = async () => {
   errorMessage.value = ''
 
   try {
-    const response = await axios.post('http://localhost:8000/api/register', {
+    await axios.post('http://localhost:8000/api/register', {
       name: name.value,
       email: email.value,
       phone: phone.value,
@@ -54,47 +54,53 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="auth-wrapper">
-    <div class="bg-overlay"></div>
+  <div class="login-wrapper">
+    <!-- Header Top Navigation -->
+    <header class="top-nav">
+      <div class="logo">⛺ forrest.<span>rent</span></div>
+      <router-link to="/" class="btn-beranda">← Beranda</router-link>
+    </header>
 
-    <div class="auth-box">
-      <router-link to="/" class="back-link">← Kembali ke Beranda</router-link>
-
-      <div class="auth-header">
-        <div class="logo">🌲 forrest<span>rent.</span></div>
+    <!-- Main Container Card -->
+    <div class="login-card">
+      <div class="brand-header">
         <h2>Buat Akun Baru</h2>
-        <p>Bergabunglah untuk mulai menyewa peralatan outdoor premium.</p>
+        <p>Isi formulir di bawah untuk mulai menyewa alat camping</p>
       </div>
 
+      <!-- Alert Error -->
       <div v-if="errorMessage" class="error-alert">
         ⚠️ {{ errorMessage }}
       </div>
 
-      <form @submit.prevent="handleRegister" class="auth-form">
+      <form @submit.prevent="handleRegister" class="login-form">
+        <!-- Nama Lengkap -->
         <div class="form-group">
           <label for="name">Nama Lengkap</label>
           <input
             type="text"
             id="name"
             v-model="name"
-            placeholder="Nama Lengkap"
-            class="form-control"
+            placeholder="Masukkan nama lengkap"
+            class="form-input"
             required
           />
         </div>
 
+        <!-- Alamat Email -->
         <div class="form-group">
-          <label for="email">Email</label>
+          <label for="email">Alamat Email</label>
           <input
             type="email"
             id="email"
             v-model="email"
             placeholder="nama@email.com"
-            class="form-control"
+            class="form-input"
             required
           />
         </div>
 
+        <!-- Nomor WhatsApp -->
         <div class="form-group">
           <label for="phone">Nomor WhatsApp</label>
           <input
@@ -102,12 +108,12 @@ const handleRegister = async () => {
             id="phone"
             v-model="phone"
             placeholder="081234567890"
-            class="form-control"
+            class="form-input"
             required
           />
         </div>
 
-        <!-- Input Kata Sandi -->
+        <!-- Kata Sandi -->
         <div class="form-group">
           <label for="password">Kata Sandi</label>
           <div class="password-wrapper">
@@ -115,8 +121,8 @@ const handleRegister = async () => {
               :type="showPassword ? 'text' : 'password'"
               id="password"
               v-model="password"
-              placeholder="••••••••"
-              class="form-control"
+              placeholder="Masukkan kata sandi"
+              class="form-input"
               required
             />
             <button 
@@ -130,7 +136,7 @@ const handleRegister = async () => {
           </div>
         </div>
 
-        <!-- Input Konfirmasi Kata Sandi (Menggunakan Fitur Intip yang Sama) -->
+        <!-- Konfirmasi Kata Sandi -->
         <div class="form-group">
           <label for="password_confirmation">Konfirmasi Kata Sandi</label>
           <div class="password-wrapper">
@@ -138,8 +144,8 @@ const handleRegister = async () => {
               :type="showPassword ? 'text' : 'password'"
               id="password_confirmation"
               v-model="passwordConfirmation"
-              placeholder="••••••••"
-              class="form-control"
+              placeholder="Konfirmasi kata sandi"
+              class="form-input"
               required
             />
             <button 
@@ -153,152 +159,171 @@ const handleRegister = async () => {
           </div>
         </div>
 
+        <!-- Tombol Submit Toska -->
         <button type="submit" class="btn-submit" :disabled="isLoading">
           <span v-if="isLoading">Mendaftarkan...</span>
-          <span v-else>Daftar Akun</span>
+          <span v-else>Daftar Sekarang</span>
         </button>
       </form>
 
-      <div class="auth-footer">
+      <!-- Footer Card -->
+      <div class="register-link">
         Sudah punya akun? 
-        <router-link to="/login" class="link">Masuk di sini</router-link>
+        <router-link to="/login">Masuk sekarang</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.auth-wrapper {
+.login-wrapper {
   min-height: 100vh;
   width: 100vw;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  padding: 40px 20px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  padding: 80px 20px 40px;
   background: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop') no-repeat center center / cover;
+  box-sizing: border-box;
 }
 
-.bg-overlay {
+/* Header di atas layar */
+.top-nav {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(8, 6, 13, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 1;
-}
-
-.auth-box {
-  position: relative;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.96);
-  color: #111827;
-  width: 100%;
-  max-width: 440px;
-  padding: 36px 30px;
-  border-radius: 20px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-}
-
-.back-link {
-  display: inline-block;
-  color: #6b7280;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-  transition: color 0.2s ease;
-}
-
-.back-link:hover {
-  color: #111827;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 20px;
+  top: 24px;
+  left: 36px;
+  right: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
 }
 
 .logo {
-  font-size: 1.6rem;
-  font-weight: 900;
-  color: #132a1e;
-  margin-bottom: 6px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
 }
 
 .logo span {
   color: #ff9f1c;
 }
 
-.auth-header h2 {
-  font-size: 1.35rem;
-  font-weight: 800;
-  margin-bottom: 4px;
+.btn-beranda {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
 }
 
-.auth-header p {
+.btn-beranda:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Card Gelap Transparan (Dark Glassmorphism) */
+.login-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(30, 35, 45, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 36px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.brand-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.brand-header h2 {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.brand-header p {
   font-size: 0.82rem;
-  color: #6b7280;
+  color: #94a3b8;
+  line-height: 1.4;
 }
 
 .error-alert {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
-.auth-form {
+.login-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   text-align: left;
 }
 
 .form-group label {
   font-size: 0.82rem;
-  font-weight: 700;
-  color: #374151;
+  font-weight: 600;
+  color: #cbd5e1;
 }
 
-.form-control {
+.form-input {
   width: 100%;
-  padding: 11px 14px;
-  border: 1.5px solid #e5e7eb;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
   font-size: 0.88rem;
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: rgba(15, 23, 42, 0.6);
+  color: #ffffff;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
-.form-control:focus {
-  background-color: #ffffff;
-  border-color: #ff9f1c;
-  box-shadow: 0 0 0 3px rgba(255, 159, 28, 0.15);
+.form-input::placeholder {
+  color: #64748b;
 }
 
-/* Fix Autofill Browser */
+.form-input:focus {
+  background-color: rgba(15, 23, 42, 0.8);
+  border-color: #2ec4b6;
+  box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.2);
+}
+
+/* Fix Autofill Warna Hitam Browser */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #f9fafb inset !important;
-  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+  -webkit-text-fill-color: #ffffff !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -309,7 +334,7 @@ input:-webkit-autofill:active {
   width: 100%;
 }
 
-.password-wrapper .form-control {
+.password-wrapper .form-input {
   padding-right: 42px;
 }
 
@@ -319,7 +344,7 @@ input:-webkit-autofill:active {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   opacity: 0.7;
   display: flex;
   align-items: center;
@@ -333,21 +358,23 @@ input:-webkit-autofill:active {
   opacity: 1;
 }
 
+/* Tombol Toska */
 .btn-submit {
-  background: #132a1e;
-  color: #ffffff;
+  background: #2ec4b6;
+  color: #0f172a;
   border: none;
   padding: 12px;
   border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 800;
   cursor: pointer;
-  margin-top: 6px;
-  transition: background-color 0.2s;
+  margin-top: 8px;
+  transition: all 0.2s ease;
 }
 
 .btn-submit:hover {
-  background: #0d1c14;
+  background: #25a99d;
+  transform: translateY(-1px);
 }
 
 .btn-submit:disabled {
@@ -355,21 +382,21 @@ input:-webkit-autofill:active {
   cursor: not-allowed;
 }
 
-.auth-footer {
+.register-link {
   text-align: center;
-  margin-top: 20px;
-  font-size: 0.85rem;
-  color: #6b7280;
+  margin-top: 22px;
+  font-size: 0.82rem;
+  color: #94a3b8;
 }
 
-.auth-footer .link {
+.register-link a {
   color: #ff9f1c;
   font-weight: 700;
   text-decoration: none;
   margin-left: 4px;
 }
 
-.auth-footer .link:hover {
+.register-link a:hover {
   text-decoration: underline;
 }
 </style>

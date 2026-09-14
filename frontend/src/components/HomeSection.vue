@@ -1,13 +1,57 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
-const cartCount = ref(0)
+const route = useRoute()
 
-// Function navigasi langsung ke route login
+const cartCount = ref(0)
+const isLoggedIn = ref(false)
+const userName = ref('')
+
+// Fungsi mengecek status login berdasarkan key dari LoginView.vue
+const checkAuth = () => {
+  const token = localStorage.getItem('access_token')
+  const userStr = localStorage.getItem('user_data')
+
+  if (token) {
+    isLoggedIn.value = true
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        userName.value = user.nama || user.name || 'Customer'
+      } catch (e) {
+        userName.value = 'Customer'
+      }
+    }
+  } else {
+    isLoggedIn.value = false
+    userName.value = ''
+  }
+}
+
+// Cek status saat komponen dipasang
+onMounted(() => {
+  checkAuth()
+})
+
+// Deteksi otomatis setiap kali terjadi perpindahan rute (setelah login)
+watch(() => route.path, () => {
+  checkAuth()
+})
+
+// Navigasi ke halaman login
 const goToLogin = () => {
   router.push('/login')
+}
+
+// Fungsi Logout
+const handleLogout = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user_data')
+  localStorage.removeItem('user_role')
+  isLoggedIn.value = false
+  window.location.reload()
 }
 </script>
 
@@ -40,10 +84,16 @@ const goToLogin = () => {
       </nav>
 
       <div class="nav-actions">
-        <!-- Tombol Masuk dengan event handler -->
-        <button type="button" @click="goToLogin" class="btn-login">
+        <!-- Jika BELUM Login: Tampilkan Tombol Masuk -->
+        <button v-if="!isLoggedIn" type="button" @click="goToLogin" class="btn-login">
           Masuk
         </button>
+
+        <!-- Jika SUDAH Login: Tampilkan Nama User & Logout -->
+        <div v-else class="user-profile">
+          <span class="user-name">👤 {{ userName }}</span>
+          <button type="button" @click="handleLogout" class="btn-logout">Logout</button>
+        </div>
         
         <div class="cart-btn">
           🛒
@@ -208,6 +258,40 @@ const goToLogin = () => {
 .btn-login:hover {
   background: #25a094;
   transform: translateY(-1px);
+}
+
+/* Styling Profil User & Logout saat sudah login */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.btn-logout {
+  background: #e71d36;
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background: #c1121f;
 }
 
 .cart-btn {

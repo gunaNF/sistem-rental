@@ -7,6 +7,22 @@ const products = ref([])
 const isLoading = ref(true)
 const errorMessage = ref('')
 
+// State Toast Notification Modern
+const toast = ref({
+  show: false,
+  title: '',
+  message: '',
+  type: 'success' // 'success' | 'warning' | 'info'
+})
+
+// Trigger Notifikasi Toast
+const triggerToast = (title, message, type = 'success') => {
+  toast.value = { show: true, title, message, type }
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
+}
+
 // Format angka ke mata uang Rupiah
 const formatRupiah = (val) => {
   if (val === undefined || val === null || isNaN(val)) return 'Rp 0'
@@ -41,6 +57,52 @@ const fetchProducts = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// Fungsi Tambah Barang ke Keranjang (LocalStorage)
+const addToCart = (item) => {
+  // Cek jika stok habis
+  if (item.stok <= 0) {
+    triggerToast('Stok Habis 🎒', 'Maaf, perlengkapan ini sedang tidak tersedia.', 'warning')
+    return
+  }
+  //Simpan ke LocalStorage
+  localStorage.setItem('cart_items', JSON.stringify(cart))
+
+  // FIRING EVENT: Memberitahu Navbar bahwa data keranjang telah diperbarui
+  window.dispatchEvent(new Event('cart-updated'))
+
+  // Ambil data keranjang saat ini dari LocalStorage
+  const savedCart = localStorage.getItem('cart_items')
+  let cart = savedCart ? JSON.parse(savedCart) : []
+
+  // Cek apakah produk sudah ada di keranjang
+  const existingIndex = cart.findIndex((cartItem) => cartItem.id === item.id)
+
+  if (existingIndex !== -1) {
+    // Jika stok mencukupi, tambah kuantitas
+    if (cart[existingIndex].qty < item.stok) {
+      cart[existingIndex].qty += 1
+      triggerToast('Kuantitas Bertambah ⚡', `Jumlah ${item.nama_barang} di keranjang diperbarui.`, 'info')
+    } else {
+      triggerToast('Batas Stok Maksimal ⚠️', `Stok barang ini hanya tersedia ${item.stok} unit.`, 'warning')
+      return
+    }
+  } else {
+    // Jika belum ada, masukkan item baru
+    cart.push({
+      id: item.id,
+      nama_barang: item.nama_barang,
+      harga_per_hari: item.harga_per_hari,
+      foto_barang: getImageUrl(item.foto_barang || item.gambar),
+      qty: 1,
+      lama_sewa: 1
+    })
+    triggerToast('Masuk Keranjang ✨', `${item.nama_barang} siap untuk diproses.`, 'success')
+  }
+
+  // Simpan kembali ke LocalStorage
+  localStorage.setItem('cart_items', JSON.stringify(cart))
 }
 
 // Jalankan fetch data saat halaman di-load
@@ -108,11 +170,29 @@ onMounted(() => {
               <span class="price-unit">/hari</span>
             </div>
             
-            <button class="btn-cart">+ Keranjang</button>
+            <!-- Event Handler Click -->
+            <button 
+              type="button"
+              class="btn-cart" 
+              @click="addToCart(item)"
+              :disabled="item.stok <= 0"
+            >
+              {{ item.stok > 0 ? '+ Keranjang' : 'Habis' }}
+            </button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Toast Notification Melayang Elegan -->
+    <transition name="toast-slide">
+      <div v-if="toast.show" :class="['custom-toast', toast.type]">
+        <div class="toast-content">
+          <span class="toast-title">{{ toast.title }}</span>
+          <p class="toast-message">{{ toast.message }}</p>
+        </div>
+      </div>
+    </transition>
   </section>
 </template>
 
@@ -124,6 +204,7 @@ onMounted(() => {
   font-family: 'Plus Jakarta Sans', sans-serif;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .header-section {
@@ -277,11 +358,81 @@ onMounted(() => {
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-.btn-cart:hover {
+.btn-cart:hover:not(:disabled) {
   background: #e08b12;
+}
+
+.btn-cart:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* --- Toast Notification Styles --- */
+.custom-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 360px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #2b2b2b;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  border-left: 5px solid #2ec4b6;
+  display: flex;
+  align-items: center;
+}
+
+.custom-toast.success {
+  border-left-color: #2ec4b6;
+}
+
+.custom-toast.warning {
+  border-left-color: #e63946;
+}
+
+.custom-toast.info {
+  border-left-color: #ff9f1c;
+}
+
+.toast-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.toast-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Toast Animation */
+.toast-slide-enter-active,
+.toast-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 
 @media (max-width: 1024px) {
@@ -293,6 +444,13 @@ onMounted(() => {
 @media (max-width: 600px) {
   .product-grid {
     grid-template-columns: repeat(1, 1fr);
+  }
+  
+  .custom-toast {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    max-width: none;
   }
 }
 </style>

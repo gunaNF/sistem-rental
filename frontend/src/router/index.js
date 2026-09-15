@@ -10,6 +10,7 @@ import KelolaItems from '@/views/Admin/Items/KelolaItems.vue'
 import TambahItems from '@/views/Admin/Items/TambahItems.vue'
 import EditItems from '@/views/Admin/Items/EditItems.vue'
 import CategoriesView from '@/views/Admin/CategoriesView.vue'
+import KelolaUser from '@/views/Admin/User/KelolaUser.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
@@ -28,7 +29,8 @@ const routes = [
       { path: 'items', name: 'kelola-items', component: KelolaItems },
       { path: 'items/tambah', name: 'tambah-items', component: TambahItems },
       { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true },
-      { path: 'kategori', name: 'kelola-kategori', component: CategoriesView }
+      { path: 'kategori', name: 'kelola-kategori', component: CategoriesView },
+      { path: 'users', name: 'kelola-user', component: KelolaUser }
     ]
   }
 ]

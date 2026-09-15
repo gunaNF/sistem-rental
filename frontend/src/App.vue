@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useRoute, RouterView } from 'vue-router'
 
-import BrandSection from '@/components/BrandSection.vue'
 import FooterSection from '@/components/FooterSection.vue'
 
 const route = useRoute()

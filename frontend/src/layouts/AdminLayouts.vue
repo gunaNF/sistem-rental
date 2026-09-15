@@ -1,5 +1,21 @@
 <script setup>
-import { RouterView, RouterLink } from 'vue-router'
+import { RouterView, RouterLink, useRouter } from 'vue-router'
+
+const router = useRouter()
+
+// 1. Pindah ke Halaman Beranda Utama (Tanpa Logout)
+const goToHome = () => {
+  router.push('/')
+}
+
+// 2. Logout Lengkap (Hapus Token + Pindah ke Beranda / Login)
+const handleLogout = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user_data')
+  localStorage.removeItem('user_role')
+  
+  router.push('/') // Mengarahkan ke halaman beranda setelah logout
+}
 </script>
 
 <template>
@@ -13,9 +29,16 @@ import { RouterView, RouterLink } from 'vue-router'
 
         <div class="user-action">
           <span class="user-name">Halo, Admin</span>
-          <router-link to="/" class="btn-logout">
-            🚪 Keluar
-          </router-link>
+
+          <!-- Tombol Ke Beranda Utama (Tanpa Hapus Token) -->
+          <button type="button" @click="goToHome" class="btn-action btn-home">
+            🏠 Beranda
+          </button>
+
+          <!-- Tombol Logout (Hapus Token & Keluar Sesi) -->
+          <button type="button" @click="handleLogout" class="btn-action btn-logout">
+            🚪 Logout
+          </button>
         </div>
       </div>
     </header>
@@ -69,25 +92,43 @@ import { RouterView, RouterLink } from 'vue-router'
 .user-action {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .user-name {
   font-size: 0.88rem;
   font-weight: 600;
   color: #475569;
+  margin-right: 6px;
 }
 
-.btn-logout {
-  text-decoration: none;
-  color: #ef4444;
-  background-color: #fef2f2;
+/* Base style tombol aksi */
+.btn-action {
   padding: 6px 14px;
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
-  border: 1px solid #fecaca;
-  transition: background-color 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* Style Tombol Beranda */
+.btn-home {
+  color: #0284c7;
+  background-color: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.btn-home:hover {
+  background-color: #e0f2fe;
+}
+
+/* Style Tombol Logout */
+.btn-logout {
+  color: #ef4444;
+  background-color: #fef2f2;
+  border-color: #fecaca;
 }
 
 .btn-logout:hover {

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import KatalogSection from '@/components/KatalogSection.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -8,14 +9,18 @@ const route = useRoute()
 const cartCount = ref(0)
 const isLoggedIn = ref(false)
 const userName = ref('')
+const userRole = ref('')
+const isMenuOpen = ref(false)
 
-// Fungsi mengecek status login berdasarkan key dari LoginView.vue
 const checkAuth = () => {
   const token = localStorage.getItem('access_token')
   const userStr = localStorage.getItem('user_data')
+  const roleStr = localStorage.getItem('user_role')
 
   if (token) {
     isLoggedIn.value = true
+    userRole.value = roleStr || ''
+    
     if (userStr) {
       try {
         const user = JSON.parse(userStr)
@@ -27,26 +32,33 @@ const checkAuth = () => {
   } else {
     isLoggedIn.value = false
     userName.value = ''
+    userRole.value = ''
   }
 }
 
-// Cek status saat komponen dipasang
 onMounted(() => {
   checkAuth()
 })
 
-// Deteksi otomatis setiap kali terjadi perpindahan rute (setelah login)
 watch(() => route.path, () => {
   checkAuth()
 })
 
-// Navigasi ke halaman login
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+}
+
 const goToLogin = () => {
   router.push('/login')
 }
 
-// Fungsi Logout
+const goToAdminDashboard = () => {
+  isMenuOpen.value = false
+  router.push('/admin/dashboard') // Sesuaikan path router dashboard admin milikmu
+}
+
 const handleLogout = () => {
+  isMenuOpen.value = false
   localStorage.removeItem('access_token')
   localStorage.removeItem('user_data')
   localStorage.removeItem('user_role')
@@ -56,92 +68,126 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <div class="hero-wrapper">
-    <!-- Top Bar -->
-    <div class="top-bar">
-      <div class="top-info">
-        <span>📞 0878-1200-0155</span>
-        <span class="divider">|</span>
-        <span>@forrestrent.com</span>
+  <div class="home-container">
+    <!-- BANNER HERO -->
+    <div class="hero-wrapper">
+      <div class="top-bar">
+        <div class="top-info">
+          <span>📞 0878-1200-0155</span>
+          <span class="divider">|</span>
+          <span>@forrestrent.com</span>
+        </div>
+        <div class="top-promo">
+          <span>Lebih dari <strong>100+</strong> alat camping siap pakai!</span>
+          <button type="button" class="btn-top">Cek Katalog →</button>
+        </div>
       </div>
-      <div class="top-promo">
-        <span>Lebih dari <strong>100+</strong> alat camping siap pakai!</span>
-        <button type="button" class="btn-top">Cek Katalog →</button>
-      </div>
+
+      <!-- Header Navbar -->
+      <header class="navbar">
+        <div class="logo">
+          <router-link to="/" class="logo-link">🏕️ forrest.<span>rent</span></router-link>
+        </div>
+
+        <nav class="nav-links">
+          <a href="#katalog">Katalog ▾</a>
+          <router-link to="/cara-sewa">Cara Sewa</router-link>
+          <a href="#lokasi">Lokasi Pick-up</a>
+          <a href="#kontak">Kontak</a>
+        </nav>
+
+        <div class="nav-actions">
+          <!-- Jika Belum Login -->
+          <button v-if="!isLoggedIn" type="button" @click="goToLogin" class="btn-login">
+            Masuk
+          </button>
+
+          <!-- Jika Sudah Login -->
+          <template v-else>
+            <!-- 1. Label Nama User -->
+            <div class="user-pill">
+              👤 {{ userName }}
+            </div>
+
+            <!-- 2. Tombol Titik Tiga (Dipisah, ditaruh di antara Nama & Keranjang) -->
+            <div class="dropdown-wrapper">
+              <button type="button" @click="toggleMenu" class="btn-more-circle" aria-label="Menu">
+                ⋮
+              </button>
+
+              <!-- Dropdown Menu Melayang -->
+              <div v-if="isMenuOpen" class="dropdown-menu">
+                <button 
+                  
+                  type="button" 
+                  @click="goToAdminDashboard" 
+                  class="dropdown-item"
+                >
+                  ⚙️Dashboard Admin
+                </button>
+
+                <button type="button" @click="handleLogout" class="dropdown-item text-danger">
+                  🚪Logout
+                </button>
+              </div>
+            </div>
+          </template>
+          
+          <!-- 3. Tombol Keranjang -->
+          <div class="cart-btn">
+            🛒
+            <span class="cart-badge">{{ cartCount }}</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Hero Content -->
+      <main class="hero-content">
+        <div class="badge-tag">
+          🌿 Sewa Alat Outdoor Tanpa Ribet
+        </div>
+
+        <h1 class="hero-title">
+          Solusi Terbaik Penjelajahan Alam Anda
+        </h1>
+
+        <p class="hero-subtitle">
+          Nikmati petualangan tanpa beban dengan persewaan alat outdoor berkualitas premium.
+        </p>
+
+        <div class="features">
+          <div class="feature-card">
+            <span class="icon">✅</span>
+            <span>Stok Real-Time</span>
+          </div>
+          <div class="feature-card">
+            <span class="icon">⚡</span>
+            <span>Proses Cepat</span>
+          </div>
+          <div class="feature-card">
+            <span class="icon">📍</span>
+            <span>Khusus BANSEL</span>
+          </div>
+        </div>
+
+        <div class="cta-box">
+          <a href="#katalog" class="btn-primary">Mulai Petualangan !</a>
+        </div>
+      </main>
     </div>
 
-    <!-- Header Navbar -->
-    <header class="navbar">
-      <div class="logo">
-        <router-link to="/" class="logo-link">🏕️ forrest.<span>rent</span></router-link>
-      </div>
-
-      <nav class="nav-links">
-        <a href="#kategori" @click.prevent>Kategori ▾</a>
-        <router-link to="/cara-sewa">Cara Sewa</router-link>
-        <a href="#lokasi" @click.prevent>Lokasi Pick-up</a>
-        <a href="#kontak" @click.prevent>Kontak</a>
-      </nav>
-
-      <div class="nav-actions">
-        <!-- Jika BELUM Login: Tampilkan Tombol Masuk -->
-        <button v-if="!isLoggedIn" type="button" @click="goToLogin" class="btn-login">
-          Masuk
-        </button>
-
-        <!-- Jika SUDAH Login: Tampilkan Nama User & Logout -->
-        <div v-else class="user-profile">
-          <span class="user-name">👤 {{ userName }}</span>
-          <button type="button" @click="handleLogout" class="btn-logout">Logout</button>
-        </div>
-        
-        <div class="cart-btn">
-          🛒
-          <span class="cart-badge">{{ cartCount }}</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Main Hero Content -->
-    <main class="hero-content">
-      <div class="badge-tag">
-        🌿 Sewa Alat Outdoor Tanpa Ribet
-      </div>
-
-      <h1 class="hero-title">
-        Solusi Terbaik Penjelajahan Alam Anda<br />
-      </h1>
-
-      <p class="hero-subtitle">
-        Nikmati petualangan tanpa beban dengan persewaan alat outdoor berkualitas premium.
-      </p>
-
-      <!-- Checklist Fitur -->
-      <div class="features">
-        <div class="feature-card">
-          <span class="icon">✅</span>
-          <span>Stok Real-Time</span>
-        </div>
-        <div class="feature-card">
-          <span class="icon">⚡</span>
-          <span>Proses Cepat</span>
-        </div>
-        <div class="feature-card">
-          <span class="icon">📍</span>
-          <span>Khusus BANSEL</span>
-        </div>
-      </div>
-
-      <!-- Action Button -->
-      <div class="cta-box">
-        <button type="button" class="btn-primary">Mulai Petualangan !</button>
-      </div>
-    </main>
+    <!-- KATALOG PRODUK -->
+    <div id="katalog">
+      <KatalogSection />
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Main Container */
+.home-container {
+  width: 100%;
+}
+
 .hero-wrapper {
   background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3)),
               url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000') center/cover no-repeat;
@@ -150,7 +196,6 @@ const handleLogout = () => {
   width: 100%;
 }
 
-/* Top Bar Terang */
 .top-bar {
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(4px);
@@ -193,7 +238,6 @@ const handleLogout = () => {
   cursor: pointer;
 }
 
-/* Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -235,10 +279,9 @@ const handleLogout = () => {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
-/* Styling Tombol Masuk */
 .btn-login {
   background: #2ec4b6;
   color: #ffffff;
@@ -260,40 +303,89 @@ const handleLogout = () => {
   transform: translateY(-1px);
 }
 
-/* Styling Profil User & Logout saat sudah login */
-.user-profile {
+/* Kotak Nama User */
+.user-pill {
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  padding: 10px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Wrapper Dropdown */
+.dropdown-wrapper {
+  position: relative;
+}
+
+/* Tombol Lingkaran Titik Tiga terpisah */
+.btn-more-circle {
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-more-circle:hover {
   background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
-.user-name {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.btn-logout {
-  background: #e71d36;
-  color: #ffffff;
-  border: none;
-  padding: 4px 10px;
+/* Menu Dropdown */
+.dropdown-menu {
+  position: absolute;
+  top: 125%;
+  right: 0;
+  background: #ffffff;
   border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px 0;
+  min-width: 170px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
 }
 
-.btn-logout:hover {
-  background: #c1121f;
+.dropdown-item:hover {
+  background-color: #f4f4f5;
 }
 
+.dropdown-item.text-danger {
+  color: #e71d36;
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: #ffe5e8;
+}
+
+/* Tombol Keranjang */
 .cart-btn {
   background: #ffffff;
   color: #222;
@@ -325,7 +417,6 @@ const handleLogout = () => {
   justify-content: center;
 }
 
-/* Main Hero Content */
 .hero-content {
   padding: 40px 6% 80px 6%;
   max-width: 750px;
@@ -361,7 +452,6 @@ const handleLogout = () => {
   max-width: 600px;
 }
 
-/* Features */
 .features {
   display: flex;
   gap: 16px;
@@ -382,7 +472,6 @@ const handleLogout = () => {
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
-/* Buttons */
 .cta-box {
   display: flex;
   gap: 16px;
@@ -398,5 +487,7 @@ const handleLogout = () => {
   font-weight: 800;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(255, 159, 28, 0.4);
+  text-decoration: none;
+  display: inline-block;
 }
 </style>

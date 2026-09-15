@@ -51,20 +51,23 @@ router.beforeEach((to, from, next) => {
     token.trim() !== ''
   )
 
-  // Hanya proteksi route yang membutuhkan Authenticated / Admin
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!isValidToken) {
-      alert('Silakan login terlebih dahulu!')
-      return next({ name: 'login' })
-    }
+  // Cek apakah HALAMAN TUJUAN (to) membutuhkan proteksi login
+  const isTargetProtected = to.matched.some(record => record.meta.requiresAuth)
+  const isTargetAdminOnly = to.matched.some(record => record.meta.requiresAdmin)
 
-    if (to.matched.some(record => record.meta.requiresAdmin) && userRole !== 'admin') {
-      alert('Akses ditolak! Anda bukan Admin.')
-      return next({ name: 'home' })
-    }
+  // Jika halaman tujuan butuh login tapi token tidak ada/invalid
+  if (isTargetProtected && !isValidToken) {
+    alert('Silakan login terlebih dahulu!')
+    return next({ name: 'login' })
   }
 
-  // Izinkan akses ke halaman publik (termasuk /login dan /register)
+  // Jika halaman tujuan khusus admin tapi role bukan admin
+  if (isTargetAdminOnly && userRole !== 'admin') {
+    alert('Akses ditolak! Anda bukan Admin.')
+    return next({ name: 'home' })
+  }
+
+  // Jika menuju halaman publik (seperti '/'), izinkan masuk tanpa hambatan
   next()
 })
 

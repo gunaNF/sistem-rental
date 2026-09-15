@@ -1,5 +1,21 @@
 <script setup>
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+
+const router = useRouter()
+
+// 1. Fungsi Pindah ke Beranda Utama (Tanpa Logout)
+const goToHome = () => {
+  router.push('/')
+}
+
+// 2. Fungsi Logout (Hapus Token & Pindah ke Beranda)
+const handleLogout = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('user_data')
+  localStorage.removeItem('user_role')
+  
+  window.location.href = '/' // Langsung reset state & pindah ke Beranda Utama
+}
 </script>
 
 <template>
@@ -14,7 +30,16 @@ import { RouterLink } from 'vue-router'
         </div>
         <div class="user-menu">
           <span class="user-greeting">Halo, Admin</span>
-          <router-link to="/login" class="btn-logout">🚪 Keluar</router-link>
+
+          <!-- Tombol Ke Beranda Utama -->
+          <button type="button" @click="goToHome" class="btn-action btn-home">
+            🏠 Beranda
+          </button>
+
+          <!-- Tombol Logout Sesi Admin -->
+          <button type="button" @click="handleLogout" class="btn-action btn-logout">
+            🚪 Keluar
+          </button>
         </div>
       </header>
 
@@ -135,25 +160,44 @@ import { RouterLink } from 'vue-router'
 .user-menu {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .user-greeting {
   color: #475569;
   font-size: 0.88rem;
   font-weight: 600;
+  margin-right: 6px;
 }
 
+/* Base Style Tombol Aksi Topbar */
+.btn-action {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+/* Tombol Beranda (Biru Muda) */
+.btn-home {
+  background: #f0f9ff;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+.btn-home:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* Tombol Logout (Merah Muda) */
 .btn-logout {
   background: #fff1f2;
   color: #e11d48;
-  border: 1px solid #fecdd3;
-  padding: 8px 16px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
+  border-color: #fecdd3;
 }
 
 .btn-logout:hover {

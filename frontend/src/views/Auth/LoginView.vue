@@ -23,15 +23,18 @@ const handleLogin = async () => {
   errorMessage.value = ''
 
   try {
-    const response = await axios.post('http://127.0.0.1:8000/api/login', {
+    // Menyesuaikan host secara otomatis (localhost / 127.0.0.1)
+    const apiUrl = `http://${window.location.hostname}:8000/api/login`
+
+    const response = await axios.post(apiUrl, {
       email: email.value,
       kata_sandi: password.value
+    }, {
+      timeout: 15000 // Batas tunggu 15 detik
     })
 
-    // Debugging: Buka Console (F12) untuk melihat struktur JSON asli dari backend
     console.log('Response dari Backend:', response.data)
 
-    // Mengecek token dari berbagai kemungkinan kunci JSON Laravel
     const accessToken = 
       response.data.access_token || 
       response.data.token || 
@@ -39,7 +42,6 @@ const handleLogin = async () => {
       response.data.data?.token || 
       response.data.authorisation?.token
 
-    // Mengecek objek user
     const user = 
       response.data.user || 
       response.data.data?.user || 
@@ -50,14 +52,12 @@ const handleLogin = async () => {
       throw new Error('Token autentikasi tidak ditemukan dari server.')
     }
 
-    // Simpan data ke localStorage
     localStorage.setItem('access_token', accessToken)
     localStorage.setItem('user_data', JSON.stringify(user))
     localStorage.setItem('user_role', user?.peran || user?.role || 'customer')
 
     alert(`Selamat datang kembali, ${user?.nama || user?.name || 'User'}!`)
 
-    // Redirect berdasarkan peran
     const role = user?.peran || user?.role
     if (role === 'admin') {
       router.push('/admin/dashboard')
@@ -66,7 +66,9 @@ const handleLogin = async () => {
     }
   } catch (error) {
     console.error('Login Error:', error)
-    if (error.response && error.response.data) {
+    if (error.code === 'ECONNABORTED') {
+      errorMessage.value = 'Koneksi ke server timeout. Pastikan backend Laravel aktif.'
+    } else if (error.response && error.response.data) {
       errorMessage.value = error.response.data.message || 'Email atau kata sandi salah.'
     } else if (error.message) {
       errorMessage.value = error.message
@@ -148,7 +150,6 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-/* Main Wrapper dengan Background Gambar Gunung */
 .login-wrapper {
   min-height: 100vh;
   background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)),
@@ -159,7 +160,6 @@ const handleLogin = async () => {
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Navbar */
 .login-navbar {
   display: flex;
   justify-content: space-between;
@@ -196,7 +196,6 @@ const handleLogin = async () => {
   color: #ffffff;
 }
 
-/* Container & Glassmorphism Card */
 .login-container {
   flex: 1;
   display: flex;
@@ -232,7 +231,6 @@ const handleLogin = async () => {
   line-height: 1.5;
 }
 
-/* Alert Error */
 .error-box {
   background: rgba(220, 38, 38, 0.25);
   border: 1px solid rgba(239, 68, 68, 0.5);
@@ -244,7 +242,6 @@ const handleLogin = async () => {
   margin-bottom: 20px;
 }
 
-/* Form Controls */
 .login-form {
   display: flex;
   flex-direction: column;
@@ -301,7 +298,6 @@ const handleLogin = async () => {
   font-size: 1.1rem;
 }
 
-/* Submit Button */
 .btn-submit {
   background: #2ec4b6;
   color: #ffffff;
@@ -326,7 +322,6 @@ const handleLogin = async () => {
   cursor: not-allowed;
 }
 
-/* Footer Link */
 .login-footer {
   margin-top: 24px;
   text-align: center;
@@ -343,4 +338,4 @@ const handleLogin = async () => {
 .login-footer a:hover {
   text-decoration: underline;
 }
-</style>
+</style>  

@@ -14,8 +14,8 @@ import KelolaUser from '@/views/Admin/User/KelolaUser.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
-  { path: '/login', name: 'login', component: LoginView },
-  { path: '/register', name: 'register', component: RegisterView },
+  { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
+  { path: '/register', name: 'register', component: RegisterView, meta: { requiresGuest: true } },
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
   
   // Rute Admin (Diproteksi)
@@ -53,23 +53,31 @@ router.beforeEach((to, from, next) => {
     token.trim() !== ''
   )
 
-  // Cek apakah HALAMAN TUJUAN (to) membutuhkan proteksi login
   const isTargetProtected = to.matched.some(record => record.meta.requiresAuth)
   const isTargetAdminOnly = to.matched.some(record => record.meta.requiresAdmin)
+  const isTargetGuestOnly = to.matched.some(record => record.meta.requiresGuest)
 
-  // Jika halaman tujuan butuh login tapi token tidak ada/invalid
+  // 1. Jika sudah terautentikasi dan mencoba buka halaman /login atau /register
+  if (isTargetGuestOnly && isValidToken) {
+    if (userRole === 'admin') {
+      return next({ name: 'admin-dashboard' })
+    }
+    return next({ name: 'home' })
+  }
+
+  // 2. Jika halaman tujuan butuh login tapi token tidak ada/invalid
   if (isTargetProtected && !isValidToken) {
     alert('Silakan login terlebih dahulu!')
     return next({ name: 'login' })
   }
 
-  // Jika halaman tujuan khusus admin tapi role bukan admin
+  // 3. Jika halaman tujuan khusus admin tapi role bukan admin
   if (isTargetAdminOnly && userRole !== 'admin') {
     alert('Akses ditolak! Anda bukan Admin.')
     return next({ name: 'home' })
   }
 
-  // Jika menuju halaman publik (seperti '/'), izinkan masuk tanpa hambatan
+  // 4. Izinkan navigasi
   next()
 })
 

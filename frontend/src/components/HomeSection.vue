@@ -71,6 +71,16 @@ const goToAdminDashboard = () => {
   router.push('/admin/dashboard')
 }
 
+const goToMyRentals = () => {
+  isMenuOpen.value = false
+  router.push('/sewa-saya')
+}
+
+// Navigasi ke Halaman Keranjang
+const goToCart = () => {
+  router.push('/cart') // Sesuaikan path ini jika route keranjangmu menggunakan nama lain (misal: /keranjang)
+}
+
 const handleLogout = () => {
   isMenuOpen.value = false
   localStorage.removeItem('access_token')
@@ -182,7 +192,7 @@ const handleLogout = () => {
               👤 {{ userName }}
             </div>
 
-            <!-- 2. Tombol Titik Tiga -->
+            <!-- 2. Tombol Titik Tiga & Dropdown Menu -->
             <div class="dropdown-wrapper">
               <button type="button" @click="toggleMenu" class="btn-more-circle" aria-label="Menu">
                 ⋮
@@ -190,7 +200,7 @@ const handleLogout = () => {
 
               <!-- Dropdown Menu Melayang -->
               <div v-if="isMenuOpen" class="dropdown-menu">
-                <!-- Opsi Dashboard Admin HANYA muncul jika role == admin -->
+                <!-- Tampil Hanya Jika Role Admin -->
                 <button 
                   v-if="userRole === 'admin'"
                   type="button" 
@@ -200,6 +210,15 @@ const handleLogout = () => {
                   ⚙️ Dashboard Admin
                 </button>
 
+                <!-- Menuju Riwayat Transaksi/Sewa User -->
+                <button 
+                  type="button" 
+                  @click="goToMyRentals" 
+                  class="dropdown-item"
+                >
+                  📋 Sewa Saya
+                </button>
+
                 <button type="button" @click="handleLogout" class="dropdown-item text-danger">
                   🚪 Logout
                 </button>
@@ -207,8 +226,8 @@ const handleLogout = () => {
             </div>
           </template>
           
-          <!-- 3. Tombol Keranjang -->
-          <div class="cart-btn">
+          <!-- 3. Tombol Keranjang (Aktif) -->
+          <div class="cart-btn" @click="goToCart" role="button" tabindex="0">
             🛒
             <span class="cart-badge">{{ cartCount }}</span>
           </div>
@@ -473,7 +492,7 @@ const handleLogout = () => {
   position: relative;
 }
 
-/* Tombol Lingkaran Titik Tiga terpisah */
+/* Tombol Lingkaran Titik Tiga */
 .btn-more-circle {
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
@@ -552,6 +571,12 @@ const handleLogout = () => {
   cursor: pointer;
   position: relative;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
 .cart-badge {

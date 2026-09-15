@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import KatalogSection from '@/components/KatalogSection.vue'
 
@@ -14,6 +14,22 @@ const userRole = ref('')
 // State Dropdown
 const isMenuOpen = ref(false)
 const isContactOpen = ref(false)
+
+// Fungsi untuk menghitung total item di keranjang dari LocalStorage
+const updateCartCount = () => {
+  const savedCart = localStorage.getItem('cart_items')
+  if (savedCart) {
+    try {
+      const items = JSON.parse(savedCart)
+      // Menghitung total seluruh kuantitas barang
+      cartCount.value = items.reduce((total, item) => total + Number(item.qty || 1), 0)
+    } catch (e) {
+      cartCount.value = 0
+    }
+  } else {
+    cartCount.value = 0
+  }
+}
 
 const checkAuth = () => {
   const token = localStorage.getItem('access_token')
@@ -41,10 +57,23 @@ const checkAuth = () => {
 
 onMounted(() => {
   checkAuth()
+  updateCartCount() // Hitung jumlah keranjang saat komponen pertama kali dimuat
+  
+  // Event listener untuk update real-time saat produk ditambahkan
+  window.addEventListener('cart-updated', updateCartCount)
+  // Event listener jika ada perubahan dari tab browser lain
+  window.addEventListener('storage', updateCartCount)
+})
+
+onUnmounted(() => {
+  // Bersihkan event listener saat komponen di-unmount
+  window.removeEventListener('cart-updated', updateCartCount)
+  window.removeEventListener('storage', updateCartCount)
 })
 
 watch(() => route.path, () => {
   checkAuth()
+  updateCartCount()
 })
 
 // Toggle Menus
@@ -78,7 +107,7 @@ const goToMyRentals = () => {
 
 // Navigasi ke Halaman Keranjang
 const goToCart = () => {
-  router.push('/cart') // Sesuaikan path ini jika route keranjangmu menggunakan nama lain (misal: /keranjang)
+  router.push('/cart')
 }
 
 const handleLogout = () => {

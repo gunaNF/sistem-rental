@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 // State Form
-const name = ref('')
+const nama = ref('')
 const email = ref('')
 const phone = ref('')
 const password = ref('')
@@ -22,6 +22,13 @@ const togglePassword = () => {
 
 // Handle Register ke API Laravel
 const handleRegister = async () => {
+  // 1. Validasi Minimal Password di Frontend
+  if (password.value.length < 8) {
+    errorMessage.value = 'Kata sandi minimal harus 8 karakter!'
+    return
+  }
+
+  // 2. Validasi Konfirmasi Password
   if (password.value !== passwordConfirmation.value) {
     errorMessage.value = 'Konfirmasi kata sandi tidak cocok!'
     return
@@ -31,19 +38,35 @@ const handleRegister = async () => {
   errorMessage.value = ''
 
   try {
-    await axios.post('http://localhost:8000/api/register', {
-      name: name.value,
+    const apiUrl = `http://${window.location.hostname}:8000/api/register`
+    
+    // Payload disesuaikan persis dengan $validator di AuthController.php
+    const payload = {
+      nama: nama.value,
       email: email.value,
-      phone: phone.value,
-      password: password.value,
-      password_confirmation: passwordConfirmation.value
+      kata_sandi: password.value,
+      no_telepon: phone.value
+    }
+
+    await axios.post(apiUrl, payload, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
     })
 
     alert('Pendaftaran berhasil! Silakan masuk dengan akun Anda.')
     router.push('/login')
   } catch (error) {
-    if (error.response && error.response.data) {
-      errorMessage.value = error.response.data.message || 'Gagal mendaftar. Periksa kembali data Anda.'
+    console.error('Detail Error Backend:', error.response?.data)
+
+    // 3. Tangkap Pesan Validasi Spesifik dari Laravel
+    if (error.response?.data?.errors) {
+      const errors = error.response.data.errors
+      const firstKey = Object.keys(errors)[0]
+      errorMessage.value = errors[firstKey][0]
+    } else if (error.response?.data?.message) {
+      errorMessage.value = error.response.data.message
     } else {
       errorMessage.value = 'Gagal terhubung ke server backend.'
     }
@@ -76,11 +99,11 @@ const handleRegister = async () => {
       <form @submit.prevent="handleRegister" class="login-form">
         <!-- Nama Lengkap -->
         <div class="form-group">
-          <label for="name">Nama Lengkap</label>
+          <label for="nama">Nama Lengkap</label>
           <input
             type="text"
-            id="name"
-            v-model="name"
+            id="nama"
+            v-model="nama"
             placeholder="Masukkan nama lengkap"
             class="form-input"
             required
@@ -121,7 +144,7 @@ const handleRegister = async () => {
               :type="showPassword ? 'text' : 'password'"
               id="password"
               v-model="password"
-              placeholder="Masukkan kata sandi"
+              placeholder="Masukkan kata sandi (min. 8 karakter)"
               class="form-input"
               required
             />
@@ -190,7 +213,6 @@ const handleRegister = async () => {
   box-sizing: border-box;
 }
 
-/* Header di atas layar */
 .top-nav {
   position: absolute;
   top: 24px;
@@ -229,7 +251,6 @@ const handleRegister = async () => {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Card Gelap Transparan (Dark Glassmorphism) */
 .login-card {
   position: relative;
   z-index: 2;
@@ -317,7 +338,6 @@ const handleRegister = async () => {
   box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.2);
 }
 
-/* Fix Autofill Warna Hitam Browser */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
@@ -358,7 +378,6 @@ input:-webkit-autofill:active {
   opacity: 1;
 }
 
-/* Tombol Toska */
 .btn-submit {
   background: #2ec4b6;
   color: #0f172a;

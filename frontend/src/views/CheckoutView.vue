@@ -77,11 +77,11 @@ const processCheckout = async () => {
   }
 
   if (!ktpFile.value) {
-    errorMessage.value = 'Silakan unggah/upload foto KTP kamu terlebih dahulu.'
+    errorMessage.value = 'Silakan unggah foto KTP kamu terlebih dahulu.'
     return
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token') || localStorage.getItem('token')
   if (!token) {
     alert('Silakan login terlebih dahulu untuk melakukan checkout.')
     router.push('/login')
@@ -91,19 +91,17 @@ const processCheckout = async () => {
   isLoading.value = true
   errorMessage.value = ''
 
-  // Menggunakan FormData agar bisa upload file KTP
+  const formattedItems = cartItems.value.map(item => ({
+    id_barang: item.id,
+    jumlah: item.qty
+  }))
+
   const formData = new FormData()
-  formData.append('tgl_sewa', form.value.tgl_sewa)
+  formData.append('tgl_mulai_sewa', form.value.tgl_sewa)
   formData.append('lama_sewa', form.value.lama_sewa)
-  formData.append('total_harga', grandTotal.value)
   formData.append('metode_pembayaran', form.value.metode_pembayaran)
-  formData.append('catatan', form.value.catatan)
   formData.append('foto_ktp', ktpFile.value) // File KTP
-  formData.append('items', JSON.stringify(cartItems.value.map(item => ({
-    item_id: item.id,
-    qty: item.qty,
-    harga_per_hari: item.harga_per_hari
-  }))))
+  formData.append('items', JSON.stringify(formattedItems))
 
   try {
     const apiUrl = `http://${window.location.hostname}:8000/api/rentals`
@@ -117,11 +115,18 @@ const processCheckout = async () => {
     localStorage.removeItem('cart_items')
     window.dispatchEvent(new Event('cart-updated'))
 
-    alert('Pesanan berhasil dibuat! Silakan cek status di Sewa Saya.')
+    alert('Pesanan & Foto KTP berhasil dikirim!')
     router.push('/sewa-saya')
   } catch (error) {
-    console.error('Gagal checkout:', error)
-    errorMessage.value = error.response?.data?.message || 'Gagal memproses pesanan. Coba lagi.'
+    console.error('Gagal checkout:', error.response?.data)
+    
+    if (error.response?.data?.errors) {
+      const errors = error.response.data.errors
+      const firstKey = Object.keys(errors)[0]
+      errorMessage.value = `Validasi gagal: ${errors[firstKey][0]}`
+    } else {
+      errorMessage.value = error.response?.data?.message || 'Gagal memproses pesanan. Coba lagi.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -553,4 +558,4 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
-</style>
+</style>git 

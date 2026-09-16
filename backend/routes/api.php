@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
@@ -7,6 +8,12 @@ use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\RentalController;
 use App\Http\Controllers\Api\ProdukController;
 use App\Http\Middleware\IsAdmin;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
 // ==========================================
 // --- PUBLIC ROUTES (Tanpa Login) ---
@@ -20,7 +27,7 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::get('/items', [ItemController::class, 'index']);
 Route::get('/items/{id}', [ItemController::class, 'show']);
 
-// Katalog Produk (Pindahan dari grup admin ke Public)
+// Katalog Produk
 Route::get('/produk', [ProdukController::class, 'index']);
 Route::get('/produk/{id}', [ProdukController::class, 'show']);
 
@@ -29,11 +36,14 @@ Route::get('/produk/{id}', [ProdukController::class, 'show']);
 // --- PROTECTED ROUTES (Wajib Bearer Token) ---
 // ==========================================
 Route::middleware('auth:sanctum')->group(function () {
-    // Profil & Logout
+    
+    // 1. Profil & Autentikasi User
     Route::get('/me', [AuthController::class, 'me']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Transaksi Penyewaan Customer
+    // 2. Transaksi Penyewaan Customer
     Route::get('/rentals', [RentalController::class, 'index']);
     Route::post('/rentals', [RentalController::class, 'store']);
     Route::get('/rentals/{id}', [RentalController::class, 'show']);
@@ -52,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/items/{id}', [ItemController::class, 'update']);
         Route::delete('/items/{id}', [ItemController::class, 'destroy']);
 
-        // Kelola Status Transaksi
+        // Kelola Status Transaksi (Verifikasi/Update)
         Route::put('/rentals/{id}/status', [RentalController::class, 'updateStatus']);
     });
 });

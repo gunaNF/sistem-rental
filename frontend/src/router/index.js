@@ -13,19 +13,27 @@ import CategoriesView from '@/views/Admin/CategoriesView.vue'
 import KelolaUser from '@/views/Admin/User/KelolaUser.vue'
 import CartView from '../views/CartView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
-import KelolaPayment from '@/views/Admin/Payment/KelolaPayment.vue'
-import KelolaRental from '@/views/Admin/Rental/KelolaRental.vue'
+import SewaSayaView from '../views/SewaSayaView.vue'
+import ProfileView from '../views/ProfileView.vue'
+import AboutView from '../views/AboutView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
   { path: '/register', name: 'register', component: RegisterView, meta: { requiresGuest: true } },
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
+  { path: '/sewa-saya', name: 'sewa-saya', component: SewaSayaView, meta: { requiresAuth: true } },
+  { path: '/tentang-kami', name: 'tentang-kami', component: AboutView },
   
-  // Route Keranjang & Checkout Customer
-  { path: '/cart', name: 'cart', component: CartView },
-  { path: '/checkout', name: 'checkout', component: CheckoutView },
+  /* Rute Profil (Path Disesuaikan ke /profil) */
+  { path: '/profil', name: 'profil', component: ProfileView, meta: { requiresAuth: true } },
 
+  // Route Keranjang Belanja
+  { path: '/cart', name: 'cart', component: CartView },
+
+  // Checkout
+  { path: '/checkout', name: 'checkout', component: CheckoutView },
+  
   // Rute Admin (Diproteksi)
   {
     path: '/admin',
@@ -52,7 +60,7 @@ const router = createRouter({
 
 // Navigation Guard untuk Proteksi Akses Halaman
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token') || localStorage.getItem('token')
   const userRole = localStorage.getItem('user_role')
 
   const isValidToken = Boolean(

@@ -11,6 +11,8 @@ import TambahItems from '@/views/Admin/Items/TambahItems.vue'
 import EditItems from '@/views/Admin/Items/EditItems.vue'
 import CategoriesView from '@/views/Admin/CategoriesView.vue'
 import KelolaUser from '@/views/Admin/User/KelolaUser.vue'
+import CartView from '../views/CartView.vue'
+import CheckoutView from '../views/CheckoutView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
@@ -18,6 +20,11 @@ const routes = [
   { path: '/register', name: 'register', component: RegisterView, meta: { requiresGuest: true } },
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
   
+  // Route Keranjang Belanja
+  { path: '/cart', name: 'cart', component: CartView },
+
+  //checkout
+  { path: '/checkout', name: 'checkout', component: CheckoutView },
   // Rute Admin (Diproteksi)
   {
     path: '/admin',

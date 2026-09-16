@@ -14,97 +14,116 @@ use Illuminate\Support\Facades\Validator;
 class RentalController extends Controller
 {
     // 1. Buat Peminjaman / Transaksi Sewa Baru
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'tgl_mulai_sewa'   => 'required|date|after_or_equal:today',
-            'tgl_selesai_sewa' => 'required|date|after_or_equal:tgl_mulai_sewa',
-            'items'            => 'required|array|min:1',
-            'items.*.id_barang' => 'required|exists:items,id',
-            'items.*.jumlah'   => 'required|integer|min:1',
+   public function store(Request $request)
+{
+    // Decode items jika dikirim via FormData
+    if ($request->has('items') && is_string($request->items)) {
+        $request->merge([
+            'items' => json_decode($request->items, true)
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validasi gagal',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        // Hitung total durasi hari sewa
-        $tglMulai   = Carbon::parse($request->tgl_mulai_sewa);
-        $tglSelesai = Carbon::parse($request->tgl_selesai_sewa);
-        $durasiHari = $tglMulai->diffInDays($tglSelesai) ?: 1;
-
-        DB::beginTransaction();
-        try {
-            $totalHargaTransaksi = 0;
-            $itemsToInsert = [];
-
-            // Pengecekan stok & hitung harga untuk tiap item
-            foreach ($request->items as $itemData) {
-                $item = Item::lockForUpdate()->find($itemData['id_barang']);
-
-                if ($item->stok < $itemData['jumlah']) {
-                    DB::rollBack();
-                    return response()->json([
-                        'status'  => false,
-                        'message' => "Stok untuk barang '{$item->nama_barang}' tidak mencukupi. Stok sisa: {$item->stok}"
-                    ], 400);
-                }
-
-                $subtotal = $item->harga_per_hari * $itemData['jumlah'] * $durasiHari;
-                $totalHargaTransaksi += $subtotal;
-
-                // Kurangi stok barang
-                $item->stok -= $itemData['jumlah'];
-                $item->save();
-
-                $itemsToInsert[] = [
-                    'id_barang' => $item->id,
-                    'jumlah'    => $itemData['jumlah'],
-                    'subtotal'  => $subtotal,
-                ];
-            }
-
-            // Buat header transaksi
-            $rental = Rental::create([
-                'id_pengguna'      => $request->user()->id,
-                'kode_transaksi'   => 'RENT-' . strtoupper(uniqid()),
-                'tgl_mulai_sewa'   => $request->tgl_mulai_sewa,
-                'tgl_selesai_sewa' => $request->tgl_selesai_sewa,
-                'total_harga'      => $totalHargaTransaksi,
-                'status_transaksi' => 'menunggu',
-            ]);
-
-            // Simpan detail item
-            foreach ($itemsToInsert as $detail) {
-                RentalItem::create([
-                    'id_transaksi' => $rental->id,
-                    'id_barang'    => $detail['id_barang'],
-                    'jumlah'       => $detail['jumlah'],
-                    'subtotal'     => $detail['subtotal'],
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'status'  => true,
-                'message' => 'Transaksi penyewaan berhasil dibuat',
-                'data'    => $rental->load('rentalItems.item')
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'status'  => false,
-                'message' => 'Gagal memproses transaksi: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
+    $validator = Validator::make($request->all(), [
+        'tgl_mulai_sewa'   => 'required|date|after_or_equal:today',
+        'lama_sewa'        => 'required|integer|min:1',
+        'foto_ktp'          => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        'items'            => 'required|array|min:1',
+        'items.*.id_barang' => 'required|exists:items,id',
+        'items.*.jumlah'   => 'required|integer|min:1',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Validasi gagal',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    $durasiHari = (int) $request->lama_sewa;
+    $tglMulai   = Carbon::parse($request->tgl_mulai_sewa);
+    $tglSelesai = $tglMulai->copy()->addDays($durasiHari);
+
+    // Upload Foto KTP
+    $pathKtp = null;
+    if ($request->hasFile('foto_ktp')) {
+        $pathKtp = $request->file('foto_ktp')->store('ktp', 'public');
+    }
+
+    DB::beginTransaction();
+    try {
+        $totalHargaTransaksi = 0;
+        $itemsToInsert = [];
+
+        foreach ($request->items as $itemData) {
+            $item = Item::lockForUpdate()->find($itemData['id_barang']);
+
+            if ($item->stok < $itemData['jumlah']) {
+                DB::rollBack();
+                return response()->json([
+                    'status'  => false,
+                    'message' => "Stok untuk barang '{$item->nama_barang}' tidak mencukupi. Stok sisa: {$item->stok}"
+                ], 400);
+            }
+
+            $subtotal = $item->harga_per_hari * $itemData['jumlah'] * $durasiHari;
+            $totalHargaTransaksi += $subtotal;
+
+            $item->stok -= $itemData['jumlah'];
+            $item->save();
+
+            $itemsToInsert[] = [
+                'id_barang' => $item->id,
+                'jumlah'    => $itemData['jumlah'],
+                'subtotal'  => $subtotal,
+            ];
+        }
+
+        // 1. Simpan Transaksi Utama
+        $rental = Rental::create([
+            'id_pengguna'      => $request->user()->id,
+            'kode_transaksi'   => 'RENT-' . strtoupper(uniqid()),
+            'tgl_mulai_sewa'   => $tglMulai->format('Y-m-d'),
+            'tgl_selesai_sewa' => $tglSelesai->format('Y-m-d'),
+            'total_harga'      => $totalHargaTransaksi,
+            'status_transaksi' => 'menunggu',
+        ]);
+
+        // 2. Simpan Detail Item
+        foreach ($itemsToInsert as $detail) {
+            RentalItem::create([
+                'id_transaksi' => $rental->id,
+                'id_barang'    => $detail['id_barang'],
+                'jumlah'       => $detail['jumlah'],
+                'subtotal'     => $detail['subtotal'],
+            ]);
+        }
+
+        // 3. Simpan KTP & Pembayaran Awal ke tabel payments
+        \App\Models\Payment::create([
+            'id_transaksi'   => $rental->id,
+            'metode_bayar'   => $request->metode_pembayaran ?? 'qris',
+            'bukti_transfer' => $pathKtp, // Simpan path foto KTP di sini
+            'jumlah_bayar'   => $totalHargaTransaksi,
+            'status_bayar'   => 'belum_dibayar',
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Transaksi penyewaan berhasil dibuat',
+            'data'    => $rental->load('rentalItems.item')
+        ], 201);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'status'  => false,
+            'message' => 'Gagal memproses transaksi: ' . $e->getMessage()
+        ], 500);
+    }
+}
     // 2. Daftar Transaksi (Admin: Semua Transaksi, Customer: Milik Sendiri)
     public function index(Request $request)
     {

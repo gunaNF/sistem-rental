@@ -16,6 +16,8 @@ import CheckoutView from '../views/CheckoutView.vue'
 import SewaSayaView from '../views/SewaSayaView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import AboutView from '../views/AboutView.vue'
+import CaraPengembalianView from '../views/CaraPengembalianView.vue'
+import SyaratKetentuanView from '../views/SyaratKetentuanView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
@@ -24,8 +26,10 @@ const routes = [
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
   { path: '/sewa-saya', name: 'sewa-saya', component: SewaSayaView, meta: { requiresAuth: true } },
   { path: '/tentang-kami', name: 'tentang-kami', component: AboutView },
+  { path: '/cara-pengembalian', name: 'cara-pengembalian', component: () => import('@/views/CaraPengembalianView.vue') },
+  { path: '/syarat-ketentuan', name: 'syarat-ketentuan', component: () => import('@/views/SyaratKetentuanView.vue') },
   
-  /* Rute Profil (Path Disesuaikan ke /profil) */
+  /* Rute Profil */
   { path: '/profil', name: 'profil', component: ProfileView, meta: { requiresAuth: true } },
 
   // Route Keranjang Belanja
@@ -47,8 +51,9 @@ const routes = [
       { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true },
       { path: 'kategori', name: 'kelola-kategori', component: CategoriesView },
       { path: 'users', name: 'kelola-user', component: KelolaUser },
-      { path: 'payments', name: 'kelola-payments', component: KelolaPayment },
-      { path: 'rentals', name: 'kelola-rentals', component: KelolaRental }
+      // Menggunakan dynamic import untuk mencegah ReferenceError jika file belum ada
+      // { path: 'payments', name: 'kelola-payments', component: () => import('@/views/Admin/KelolaPayment.vue') },
+      // { path: 'rentals', name: 'kelola-rentals', component: () => import('@/views/Admin/KelolaRental.vue') }
     ]
   }
 ]

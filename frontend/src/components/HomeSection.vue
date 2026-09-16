@@ -10,10 +10,7 @@ const cartCount = ref(0)
 const isLoggedIn = ref(false)
 const userName = ref('')
 const userRole = ref('')
-
-// State Dropdown
 const isMenuOpen = ref(false)
-const isContactOpen = ref(false)
 
 const checkAuth = () => {
   const token = localStorage.getItem('access_token')
@@ -47,19 +44,8 @@ watch(() => route.path, () => {
   checkAuth()
 })
 
-// Toggle Menus
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
-  if (isMenuOpen.value) isContactOpen.value = false
-}
-
-const toggleContact = () => {
-  isContactOpen.value = !isContactOpen.value
-  if (isContactOpen.value) isMenuOpen.value = false
-}
-
-const closeContact = () => {
-  isContactOpen.value = false
 }
 
 const goToLogin = () => {
@@ -69,6 +55,16 @@ const goToLogin = () => {
 const goToAdminDashboard = () => {
   isMenuOpen.value = false
   router.push('/admin/dashboard')
+}
+
+const goToMyRentals = () => {
+  isMenuOpen.value = false
+  router.push('/sewa-saya')
+}
+
+// Navigasi ke Halaman Keranjang
+const goToCart = () => {
+  router.push('/cart') // Sesuaikan path ini jika route keranjangmu menggunakan nama lain (misal: /keranjang)
 }
 
 const handleLogout = () => {
@@ -87,13 +83,13 @@ const handleLogout = () => {
     <div class="hero-wrapper">
       <div class="top-bar">
         <div class="top-info">
-          <span>📞 0856-4219-4669</span>
+          <span>📞 0878-1200-0155</span>
           <span class="divider">|</span>
           <span>@forrestrent.com</span>
         </div>
         <div class="top-promo">
           <span>Lebih dari <strong>100+</strong> alat camping siap pakai!</span>
-          <a href="#katalog" class="btn-top">Cek Katalog →</a>
+          <button type="button" class="btn-top">Cek Katalog →</button>
         </div>
       </div>
 
@@ -104,69 +100,10 @@ const handleLogout = () => {
         </div>
 
         <nav class="nav-links">
-          <a href="#katalog">Kategori ▾</a>
+          <a href="#katalog">Katalog ▾</a>
           <router-link to="/cara-sewa">Cara Sewa</router-link>
           <a href="#lokasi">Lokasi Pick-up</a>
-
-          <!-- Dropdown Kontak -->
-          <div class="nav-dropdown" @mouseleave="closeContact">
-            <button type="button" class="btn-nav-dropdown" @click="toggleContact">
-              Kontak ▾
-            </button>
-
-            <div v-if="isContactOpen" class="contact-dropdown-menu">
-              <!-- WhatsApp -->
-              <a 
-                href="https://wa.me/6285642194669?text=Halo%20Admin%20Forrest%20Rent,%20saya%20ingin%20bertanya" 
-                target="_blank" 
-                class="contact-item"
-              >
-                <span class="icon">💬</span>
-                <div class="info">
-                  <span class="label">WhatsApp</span>
-                  <span class="value">+62 856-4219-4669</span>
-                </div>
-              </a>
-
-              <!-- Instagram -->
-              <a 
-                href="https://instagram.com/forrest.rent" 
-                target="_blank" 
-                class="contact-item"
-              >
-                <span class="icon">📸</span>
-                <div class="info">
-                  <span class="label">Instagram</span>
-                  <span class="value">@forrest.rent</span>
-                </div>
-              </a>
-
-              <!-- TikTok -->
-              <a 
-                href="https://tiktok.com/@forrest.rent" 
-                target="_blank" 
-                class="contact-item"
-              >
-                <span class="icon">🎵</span>
-                <div class="info">
-                  <span class="label">TikTok</span>
-                  <span class="value">@forrest.rent</span>
-                </div>
-              </a>
-
-              <!-- Email -->
-              <a 
-                href="mailto:info@forrestrent.com" 
-                class="contact-item"
-              >
-                <span class="icon">✉️</span>
-                <div class="info">
-                  <span class="label">Email</span>
-                  <span class="value">@forrestrent.com</span>
-                </div>
-              </a>
-            </div>
-          </div>
+          <a href="#kontak">Kontak</a>
         </nav>
 
         <div class="nav-actions">
@@ -182,7 +119,7 @@ const handleLogout = () => {
               👤 {{ userName }}
             </div>
 
-            <!-- 2. Tombol Titik Tiga -->
+            <!-- 2. Tombol Titik Tiga & Dropdown Menu -->
             <div class="dropdown-wrapper">
               <button type="button" @click="toggleMenu" class="btn-more-circle" aria-label="Menu">
                 ⋮
@@ -190,7 +127,7 @@ const handleLogout = () => {
 
               <!-- Dropdown Menu Melayang -->
               <div v-if="isMenuOpen" class="dropdown-menu">
-                <!-- Opsi Dashboard Admin HANYA muncul jika role == admin -->
+                <!-- Tampil Hanya Jika Role Admin -->
                 <button 
                   v-if="userRole === 'admin'"
                   type="button" 
@@ -200,6 +137,15 @@ const handleLogout = () => {
                   ⚙️ Dashboard Admin
                 </button>
 
+                <!-- Menuju Riwayat Transaksi/Sewa User -->
+                <button 
+                  type="button" 
+                  @click="goToMyRentals" 
+                  class="dropdown-item"
+                >
+                  📋 Sewa Saya
+                </button>
+
                 <button type="button" @click="handleLogout" class="dropdown-item text-danger">
                   🚪 Logout
                 </button>
@@ -207,8 +153,8 @@ const handleLogout = () => {
             </div>
           </template>
           
-          <!-- 3. Tombol Keranjang -->
-          <div class="cart-btn">
+          <!-- 3. Tombol Keranjang (Aktif) -->
+          <div class="cart-btn" @click="goToCart" role="button" tabindex="0">
             🛒
             <span class="cart-badge">{{ cartCount }}</span>
           </div>
@@ -304,7 +250,7 @@ const handleLogout = () => {
 .btn-top {
   background: #2ec4b6;
   color: #ffffff;
-  text-decoration: none;
+  border: none;
   padding: 4px 14px;
   border-radius: 20px;
   font-weight: 700;
@@ -335,7 +281,6 @@ const handleLogout = () => {
 
 .nav-links {
   display: flex;
-  align-items: center;
   gap: 32px;
 }
 
@@ -349,84 +294,6 @@ const handleLogout = () => {
 
 .nav-links a:hover {
   color: #2ec4b6;
-}
-
-/* Dropdown Kontak Nav Style */
-.nav-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.btn-nav-dropdown {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 0.95rem;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.btn-nav-dropdown:hover {
-  color: #2ec4b6;
-}
-
-.contact-dropdown-menu {
-  position: absolute;
-  top: 130%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
-  padding: 8px;
-  min-width: 230px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  color: #ffffff !important;
-  text-decoration: none;
-  border-radius: 10px;
-  transition: all 0.2s ease;
-}
-
-.contact-item:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(3px);
-}
-
-.contact-item .icon {
-  font-size: 1.2rem;
-}
-
-.contact-item .info {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.contact-item .label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.contact-item .value {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
 }
 
 .nav-actions {
@@ -473,7 +340,7 @@ const handleLogout = () => {
   position: relative;
 }
 
-/* Tombol Lingkaran Titik Tiga terpisah */
+/* Tombol Lingkaran Titik Tiga */
 .btn-more-circle {
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
@@ -552,6 +419,12 @@ const handleLogout = () => {
   cursor: pointer;
   position: relative;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
 
 .cart-badge {

@@ -1,66 +1,52 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 
-// Data Dummy Alat Camping
-const products = ref([
-  {
-    id: 1,
-    nama_alat: 'Tenda Dome Eiger 4 Person',
-    kategori: 'Tenda',
-    harga_sewa: 50000,
-    stok: 5,
-    gambar: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=600'
-  },
-  {
-    id: 2,
-    nama_alat: 'Carrier Consina 60L',
-    kategori: 'Tas Carrier',
-    harga_sewa: 35000,
-    stok: 8,
-    gambar: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=600'
-  },
-  {
-    id: 3,
-    nama_alat: 'Sleeping Bag Rei Thermal',
-    kategori: 'Perlengkapan',
-    harga_sewa: 15000,
-    stok: 12,
-    gambar: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600'
-  },
-  {
-    id: 4,
-    nama_alat: 'Kompor Portable & Windshield',
-    kategori: 'Masak',
-    harga_sewa: 20000,
-    stok: 6,
-    gambar: 'https://images.unsplash.com/photo-1526772662000-3f88f10405ff?q=80&w=600'
-  },
-  {
-    id: 5,
-    nama_alat: 'Lampu Tenda LED Rechargeable',
-    kategori: 'Perlengkapan',
-    harga_sewa: 10000,
-    stok: 10,
-    gambar: 'https://images.unsplash.com/photo-1517824806704-9040b037703b?q=80&w=600'
-  },
-  {
-    id: 6,
-    nama_alat: 'Flysheet 3x4 Meter Anti Air',
-    kategori: 'Tenda',
-    harga_sewa: 15000,
-    stok: 4,
-    gambar: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?q=80&w=600'
-  }
-])
+// State Reaktif
+const products = ref([])
+const isLoading = ref(true)
+const errorMessage = ref('')
 
-// Format Rupiah
+// Format angka ke mata uang Rupiah
 const formatRupiah = (val) => {
+  if (val === undefined || val === null || isNaN(val)) return 'Rp 0'
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0
   }).format(val)
 }
+
+// Helper untuk URL Gambar (Mendukung foto_barang / gambar dari storage Laravel)
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return 'https://via.placeholder.com/600x400?text=No+Image'
+  if (imagePath.startsWith('http')) return imagePath
+  return `http://${window.location.hostname}:8000/storage/${imagePath}`
+}
+
+// Fetch Data dari API Laravel
+const fetchProducts = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const apiUrl = `http://${window.location.hostname}:8000/api/items`
+    const response = await axios.get(apiUrl)
+    
+    // Tangkap data dari response.data.data atau response.data
+    products.value = response.data.data || response.data
+  } catch (error) {
+    console.error('Gagal mengambil data katalog:', error)
+    errorMessage.value = 'Gagal memuat katalog alat camping. Pastikan backend Laravel aktif.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Jalankan fetch data saat halaman di-load
+onMounted(() => {
+  fetchProducts()
+})
 </script>
 
 <template>
@@ -70,23 +56,55 @@ const formatRupiah = (val) => {
       <p>Pilih perlengkapan outdoor berkualitas untuk petualanganmu</p>
     </div>
 
-    <div class="product-grid">
+    <!-- State Loading -->
+    <div v-if="isLoading" class="state-container">
+      <div class="spinner"></div>
+      <p>Memuat data alat camping...</p>
+    </div>
+
+    <!-- State Error -->
+    <div v-else-if="errorMessage" class="state-container error-text">
+      <p>⚠️ {{ errorMessage }}</p>
+      <button @click="fetchProducts" class="btn-retry">Coba Lagi</button>
+    </div>
+
+    <!-- State Data Kosong -->
+    <div v-else-if="products.length === 0" class="state-container">
+      <p>Belum ada alat camping yang tersedia saat ini.</p>
+    </div>
+
+    <!-- Grid Produk -->
+    <div v-else class="product-grid">
       <div v-for="item in products" :key="item.id" class="product-card">
         <div class="image-wrapper">
-          <img :src="item.gambar" :alt="item.nama_alat" />
-          <span class="badge-kategori">{{ item.kategori }}</span>
+          <!-- Menggunakan foto_barang atau gambar sesuai model Laravel -->
+          <img 
+            :src="getImageUrl(item.foto_barang || item.gambar)" 
+            :alt="item.nama_barang" 
+          />
+          <!-- Menggunakan relasi category sesuai fungsi relasi di Model -->
+          <span class="badge-kategori">
+            {{ item.category?.nama_kategori || item.category?.nama || 'Perlengkapan' }}
+          </span>
         </div>
 
         <div class="card-body">
-          <h3 class="product-title">{{ item.nama_alat }}</h3>
+          <!-- Menggunakan nama_barang -->
+          <h3 class="product-title">
+            {{ item.nama_barang || 'Tanpa Nama' }}
+          </h3>
           
+          <!-- Menggunakan stok -->
           <div class="stock-info">
-            <span>Stok: <strong>{{ item.stok }}</strong></span>
+            <span>Stok: <strong>{{ item.stok ?? 0 }}</strong></span>
           </div>
 
           <div class="card-footer">
             <div class="price">
-              <span class="price-val">{{ formatRupiah(item.harga_sewa) }}</span>
+              <!-- Menggunakan harga_per_hari -->
+              <span class="price-val">
+                {{ formatRupiah(item.harga_per_hari) }}
+              </span>
               <span class="price-unit">/hari</span>
             </div>
             
@@ -125,10 +143,45 @@ const formatRupiah = (val) => {
   font-size: 0.95rem;
 }
 
-/* Mengunci layout jadi 4 Kolom Pas */
+.state-container {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+}
+
+.error-text {
+  color: #e63946;
+}
+
+.btn-retry {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #2ec4b6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 35px;
+  height: 35px;
+  border: 4px solid #e0e0e0;
+  border-top: 4px solid #2ec4b6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Pas 4 produk ke samping */
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
@@ -148,18 +201,17 @@ const formatRupiah = (val) => {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Mengatur proporsi foto agar tinggi & pas (tidak pipih) */
 .image-wrapper {
   position: relative;
   width: 100%;
-  height: 200px; /* Tinggi foto dibuat pas tegak */
+  height: 200px;
   background-color: #f0f0f0;
 }
 
 .image-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Agar gambar tidak gepeng */
+  object-fit: cover;
 }
 
 .badge-kategori {
@@ -232,16 +284,15 @@ const formatRupiah = (val) => {
   background: #e08b12;
 }
 
-/* Responsif untuk Layar HP/Tablet */
 @media (max-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 kolom di tablet */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 600px) {
   .product-grid {
-    grid-template-columns: repeat(1, 1fr); /* 1 kolom di HP */
+    grid-template-columns: repeat(1, 1fr);
   }
 }
 </style>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\RentalController;
 use App\Http\Controllers\Api\ProdukController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Middleware\IsAdmin;
 
 /*
@@ -64,5 +65,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Kelola Status Transaksi (Verifikasi/Update)
         Route::put('/rentals/{id}/status', [RentalController::class, 'updateStatus']);
+        
+        // CRUD / Kelola User
+        Route::get('/users', [App\Http\Controllers\Api\UserController::class, 'index']);
+        Route::delete('/users/{id}', [App\Http\Controllers\Api\UserController::class, 'destroy']);
+
+        // Kelola Transaksi Rental oleh Admin
+        Route::get('/admin/rentals', [RentalController::class, 'adminIndex']); 
+        Route::put('/rentals/{id}/status', [RentalController::class, 'updateStatus']); 
+
+        // --- KELOLA PEMBAYARAN (Mendukung PUT & PATCH) ---
+        Route::get('/payments', [PaymentController::class, 'index']);
+        Route::match(['put', 'patch'], '/payments/{id}/status', [PaymentController::class, 'updateStatus']);
     });
 });

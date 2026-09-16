@@ -82,8 +82,9 @@ onMounted(() => {
       <table class="crud-table">
         <thead>
           <tr>
-            <th style="width: 80px;">No</th>
+            <th style="width: 60px;">No</th>
             <th>ID Transaksi</th>
+            <th>Penyewa</th>
             <th>Metode Bayar</th>
             <th>Jumlah Bayar</th>
             <th>Bukti Transfer</th>
@@ -95,18 +96,24 @@ onMounted(() => {
         <tbody>
           <!-- State Loading -->
           <tr v-if="isLoading">
-            <td colspan="8" class="text-center empty-msg">Memuat data pembayaran...</td>
+            <td colspan="9" class="text-center empty-msg">Memuat data pembayaran...</td>
           </tr>
 
           <!-- State Data Kosong -->
           <tr v-else-if="payments.length === 0">
-            <td colspan="8" class="text-center empty-msg">Belum ada data pembayaran.</td>
+            <td colspan="9" class="text-center empty-msg">Belum ada data pembayaran.</td>
           </tr>
 
           <!-- Data Payments -->
           <tr v-else v-for="(pay, index) in payments" :key="pay.id || index">
             <td class="text-muted">#{{ index + 1 }}</td>
             <td class="font-bold">#{{ pay.id_transaksi }}</td>
+            <td>
+              <div class="user-info">
+                <strong>{{ pay.rental?.user?.nama || pay.rental?.user?.name || 'User #' + (pay.rental?.id_pengguna || '-') }}</strong>
+                <small class="text-muted" v-if="pay.rental?.user?.email">{{ pay.rental?.user?.email }}</small>
+              </div>
+            </td>
             <td>{{ pay.metode_bayar || '-' }}</td>
             <td class="price">{{ formatRupiah(pay.jumlah_bayar) }}</td>
             <td>
@@ -119,7 +126,7 @@ onMounted(() => {
               </button>
               <span v-else class="text-muted">Belum ada</span>
             </td>
-            <td>{{ pay.tgl_pembayaran || '-' }}</td>
+            <td>{{ pay.tgl_pembayaran || pay.created_at?.substring(0, 10) || '-' }}</td>
             <td>
               <span :class="['status-badge', pay.status_bayar]">
                 {{ pay.status_bayar || 'pending' }}
@@ -291,6 +298,15 @@ onMounted(() => {
 .font-bold { font-weight: 700; color: #0f172a; }
 .price { font-weight: 700; color: #0f172a; }
 .text-center { text-align: center; }
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+.user-info small {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
 
 /* Badge Status */
 .status-badge {

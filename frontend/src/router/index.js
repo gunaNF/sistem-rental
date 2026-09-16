@@ -19,6 +19,7 @@ import AboutView from '../views/AboutView.vue'
 import CaraPengembalianView from '../views/CaraPengembalianView.vue'
 import SyaratKetentuanView from '../views/SyaratKetentuanView.vue'
 
+
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
@@ -26,8 +27,8 @@ const routes = [
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
   { path: '/sewa-saya', name: 'sewa-saya', component: SewaSayaView, meta: { requiresAuth: true } },
   { path: '/tentang-kami', name: 'tentang-kami', component: AboutView },
-  { path: '/cara-pengembalian', name: 'cara-pengembalian', component: () => import('@/views/CaraPengembalianView.vue') },
-  { path: '/syarat-ketentuan', name: 'syarat-ketentuan', component: () => import('@/views/SyaratKetentuanView.vue') },
+  { path: '/cara-pengembalian', name: 'cara-pengembalian', component: CaraPengembalianView },
+  { path: '/syarat-ketentuan', name: 'syarat-ketentuan', component: SyaratKetentuanView },
   
   /* Rute Profil */
   { path: '/profil', name: 'profil', component: ProfileView, meta: { requiresAuth: true } },
@@ -51,9 +52,10 @@ const routes = [
       { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true },
       { path: 'kategori', name: 'kelola-kategori', component: CategoriesView },
       { path: 'users', name: 'kelola-user', component: KelolaUser },
-      // Menggunakan dynamic import untuk mencegah ReferenceError jika file belum ada
-      // { path: 'payments', name: 'kelola-payments', component: () => import('@/views/Admin/KelolaPayment.vue') },
-      // { path: 'rentals', name: 'kelola-rentals', component: () => import('@/views/Admin/KelolaRental.vue') }
+      
+      // Menggunakan folder Rental (Huruf R besar sesuai struktur foldermu)
+      { path: 'rentals', name: 'kelola-rentals', component: () => import('@/views/Admin/Rental/KelolaRental.vue') },
+      { path: 'payments', name: 'kelola-payments', component: () => import('@/views/Admin/Payment/KelolaPayment.vue') }
     ]
   }
 ]

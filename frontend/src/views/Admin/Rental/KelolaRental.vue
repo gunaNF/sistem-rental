@@ -53,6 +53,112 @@ const formatRupiah = (angka) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(angka || 0)
 }
 
+// 3. Fungsi Cetak Nota / Struk Sewa (Thermal Style)
+const printReceipt = (rental) => {
+  const printWindow = window.open('', '_blank', 'width=400,height=600')
+  
+  const itemsHtml = rental.rental_items && rental.rental_items.length > 0
+    ? rental.rental_items.map(item => `
+        <tr>
+          <td>${item.item?.nama_barang || item.nama_barang || 'Barang'}</td>
+          <td>x${item.jumlah || 1}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="2">Tidak ada rincian barang</td></tr>'
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Nota Sewa - ${rental.kode_transaksi}</title>
+        <style>
+          body { font-family: monospace; font-size: 12px; padding: 10px; color: #000; }
+          .header { text-align: center; margin-bottom: 15px; }
+          .header h2 { margin: 0; font-size: 16px; }
+          .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+          .info p { margin: 4px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { text-align: left; padding: 4px; font-size: 11px; border-bottom: 1px dashed #ccc; }
+          .total { text-align: right; font-weight: bold; margin-top: 10px; font-size: 13px; }
+          .footer { text-align: center; margin-top: 20px; font-size: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>FORREST RENT</h2>
+          <p>Penyewaan Alat Camping - Bansel</p>
+        </div>
+        <div class="divider"></div>
+        <div class="info">
+          <p><strong>Kode:</strong> ${rental.kode_transaksi}</p>
+          <p><strong>Penyewa:</strong> ${rental.user?.nama || 'Customer'}</p>
+          <p><strong>Periode:</strong> ${rental.tgl_mulai_sewa} s/d ${rental.tgl_selesai_sewa}</p>
+          <p><strong>Status:</strong> ${rental.status_transaksi}</p>
+        </div>
+        <div class="divider"></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Jml</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        <div class="total">
+          Total: ${formatRupiah(rental.total_harga)}
+        </div>
+        <div class="divider"></div>
+        <div class="footer">
+          <p>Terima kasih telah menyewa di Forrest Rent!</p>
+          <p>Barang harap dicek kembali saat pengambilan.</p>
+        </div>
+      </body>
+    </html>
+  `)
+  
+  printWindow.document.close()
+  printWindow.focus()
+  setTimeout(() => {
+    printWindow.print()
+    printWindow.close()
+  }, 500)
+}
+
+// 4. Fungsi Export Data ke Excel (CSV)
+const exportToExcel = () => {
+  if (!rentals.value || rentals.value.length === 0) {
+    alert('Tidak ada data transaksi untuk diexport.')
+    return
+  }
+
+  let csvContent = "data:text/csv;charset=utf-8," 
+    + "No,Kode Transaksi,Nama Penyewa,Email,Tgl Mulai,Tgl Selesai,Total Harga,Status\n"
+
+  rentals.value.forEach((rental, index) => {
+    const row = [
+      index + 1,
+      `"${rental.kode_transaksi || ''}"`,
+      `"${rental.user?.nama || 'Customer'}"`,
+      `"${rental.user?.email || '-'}"`,
+      `"${rental.tgl_mulai_sewa || ''}"`,
+      `"${rental.tgl_selesai_sewa || ''}"`,
+      rental.total_harga || 0,
+      `"${rental.status_transaksi || ''}"`
+    ]
+    csvContent += row.join(",") + "\n"
+  })
+
+  const encodedUri = encodeURI(csvContent)
+  const link = document.createElement("a")
+  link.setAttribute("href", encodedUri)
+  link.setAttribute("download", `Laporan_Transaksi_ForrestRent_${new Date().toISOString().slice(0, 10)}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 onMounted(() => {
   fetchRentals()
 })
@@ -67,7 +173,13 @@ onMounted(() => {
         <h2>Kelola Transaksi Sewa</h2>
         <p class="subtitle">Pantau seluruh pemesanan sewa, status transaksi, dan detail penyewa.</p>
       </div>
-      <button class="btn-refresh" @click="fetchRentals">🔄 Muat Ulang</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <!-- Tombol Export Excel -->
+        <button class="btn-excel" @click="exportToExcel">
+          📊 Unduh Excel
+        </button>
+        <button class="btn-refresh" @click="fetchRentals">🔄 Muat Ulang</button>
+      </div>
     </div>
 
     <!-- Alert Notifikasi -->
@@ -127,7 +239,7 @@ onMounted(() => {
                 <button @click="selectedRental = rental" class="btn-action detail">
                   👁️ Detail
                 </button>
-                <!-- Opsi Select Disesuaikan Presisi Dengan Migration -->
+                <!-- Opsi Select Status -->
                 <select 
                   :value="rental.status_transaksi" 
                   @change="updateStatus(rental.id, $event.target.value)"
@@ -179,6 +291,10 @@ onMounted(() => {
         <p v-else class="text-muted empty-sub">Tidak ada rincian barang.</p>
 
         <div class="modal-actions">
+          <!-- Tombol Cetak Nota -->
+          <button class="btn-print" @click="printReceipt(selectedRental)">
+            🖨️ Cetak Nota
+          </button>
           <button class="btn-cancel" @click="selectedRental = null">Tutup</button>
         </div>
       </div>
@@ -231,7 +347,7 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-.btn-refresh {
+.btn-refresh, .btn-excel {
   background: #ffffff;
   color: #334155;
   border: 1px solid #cbd5e1;
@@ -241,6 +357,16 @@ onMounted(() => {
   font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.btn-excel {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+}
+
+.btn-excel:hover {
+  background: #15803d;
 }
 
 .btn-refresh:hover {
@@ -445,7 +571,23 @@ onMounted(() => {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 20px;
+}
+
+.btn-print {
+  background: #0284c7;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-print:hover {
+  background: #0369a1;
 }
 
 .btn-cancel {

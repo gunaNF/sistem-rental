@@ -8,6 +8,7 @@ const categories = ref([])
 const selectedCategoryId = ref(null) // null = Semua Kategori
 const isLoading = ref(true)
 const errorMessage = ref('')
+const isAdmin = ref(false) // <-- Tambahan state untuk cek admin
 
 // State Toast Notification
 const toast = ref({
@@ -93,6 +94,12 @@ const handleExternalFilter = (event) => {
 
 // Fungsi Tambah Barang ke Keranjang
 const addToCart = (item) => {
+  // Validasi tambahan di frontend: Blokir jika user adalah admin
+  if (isAdmin.value) {
+    triggerToast('Akses Ditolak', 'Akun admin tidak dapat menyewa barang.', 'warning')
+    return
+  }
+
   const itemStock = item.stok ?? 0
   if (itemStock <= 0) {
     triggerToast('Stok Habis', 'Maaf, perlengkapan ini sedang tidak tersedia.', 'warning')
@@ -131,6 +138,16 @@ const addToCart = (item) => {
 onMounted(() => {
   fetchData()
   window.addEventListener('filter-category', handleExternalFilter)
+
+  // Cek role user dari localStorage saat komponen dimuat
+  try {
+    const userData = JSON.parse(localStorage.getItem('user'))
+    if (userData && (userData.peran === 'admin' || userData.role === 'admin')) {
+      isAdmin.value = true
+    }
+  } catch (e) {
+    console.error('Gagal membaca data user dari localStorage', e)
+  }
 })
 
 onUnmounted(() => {
@@ -213,13 +230,14 @@ onUnmounted(() => {
               <span class="price-unit">/hari</span>
             </div>
             
+            <!-- Tombol Keranjang (Disabled jika Admin) -->
             <button 
               type="button"
               class="btn-cart" 
               @click="addToCart(item)"
-              :disabled="(item.stok ?? 0) <= 0"
+              :disabled="isAdmin || (item.stok ?? 0) <= 0"
             >
-              {{ (item.stok ?? 0) > 0 ? '+ Keranjang' : 'Habis' }}
+              {{ isAdmin ? 'Khusus Customer' : ((item.stok ?? 0) > 0 ? '+ Keranjang' : 'Habis') }}
             </button>
           </div>
         </div>

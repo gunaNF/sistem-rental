@@ -1,13 +1,15 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 
 // State Reaktif
 const products = ref([])
+const categories = ref([])
+const selectedCategoryId = ref(null) // null = Semua Kategori
 const isLoading = ref(true)
 const errorMessage = ref('')
 
-// State Toast Notification Modern
+// State Toast Notification
 const toast = ref({
   show: false,
   title: '',
@@ -33,89 +35,135 @@ const formatRupiah = (val) => {
   }).format(val)
 }
 
-// Helper untuk URL Gambar (Mendukung foto_barang / gambar dari storage Laravel)
+// Helper URL Gambar
 const getImageUrl = (imagePath) => {
   if (!imagePath) return 'https://via.placeholder.com/600x400?text=No+Image'
   if (imagePath.startsWith('http')) return imagePath
   return `http://${window.location.hostname}:8000/storage/${imagePath}`
 }
 
-// Fetch Data dari API Laravel
-const fetchProducts = async () => {
+// Fetch Data Barang & Kategori dari API Laravel
+const fetchData = async () => {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const apiUrl = `http://${window.location.hostname}:8000/api/items`
-    const response = await axios.get(apiUrl)
+    const host = window.location.hostname
+    const [resItems, resCategories] = await Promise.all([
+      axios.get(`http://${host}:8000/api/items`),
+      axios.get(`http://${host}:8000/api/categories`)
+    ])
     
-    // Tangkap data dari response.data.data atau response.data
-    products.value = response.data.data || response.data
+    products.value = resItems.data?.data || resItems.data || []
+    categories.value = resCategories.data?.data || resCategories.data || []
   } catch (error) {
     console.error('Gagal mengambil data katalog:', error)
-    errorMessage.value = 'Gagal memuat katalog alat camping. Pastikan backend Laravel aktif.'
+    errorMessage.value = 'Gagal memuat katalog alat camping. Pastikan server backend aktif.'
   } finally {
     isLoading.value = false
   }
 }
 
-// Fungsi Tambah Barang ke Keranjang (LocalStorage)
+// Filter Produk Berdasarkan Kategori
+const filteredProducts = computed(() => {
+  if (selectedCategoryId.value === null || selectedCategoryId.value === undefined) {
+    return products.value
+  }
+
+  return products.value.filter(item => {
+    const itemCatId = item.category_id ?? item.kategori_id ?? item.id_kategori ?? item.category?.id ?? item.kategori?.id
+    return String(itemCatId) === String(selectedCategoryId.value)
+  })
+})
+
+// Pilihan Kategori Tab
+const filterCategory = (catId) => {
+  selectedCategoryId.value = catId
+}
+
+// Handler Sinkronisasi Event Filter dari Navbar
+const handleExternalFilter = (event) => {
+  selectedCategoryId.value = event.detail
+  
+  const catalogEl = document.getElementById('katalog')
+  if (catalogEl) {
+    catalogEl.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
+// Fungsi Tambah Barang ke Keranjang
 const addToCart = (item) => {
-  // Cek jika stok habis
-  if (item.stok <= 0) {
-    triggerToast('Stok Habis 🎒', 'Maaf, perlengkapan ini sedang tidak tersedia.', 'warning')
+  const itemStock = item.stok ?? 0
+  if (itemStock <= 0) {
+    triggerToast('Stok Habis', 'Maaf, perlengkapan ini sedang tidak tersedia.', 'warning')
     return
   }
-  //Simpan ke LocalStorage
-  localStorage.setItem('cart_items', JSON.stringify(cart))
 
-  // FIRING EVENT: Memberitahu Navbar bahwa data keranjang telah diperbarui
-  window.dispatchEvent(new Event('cart-updated'))
-
-  // Ambil data keranjang saat ini dari LocalStorage
   const savedCart = localStorage.getItem('cart_items')
   let cart = savedCart ? JSON.parse(savedCart) : []
 
-  // Cek apakah produk sudah ada di keranjang
   const existingIndex = cart.findIndex((cartItem) => cartItem.id === item.id)
 
   if (existingIndex !== -1) {
-    // Jika stok mencukupi, tambah kuantitas
-    if (cart[existingIndex].qty < item.stok) {
+    if (cart[existingIndex].qty < itemStock) {
       cart[existingIndex].qty += 1
-      triggerToast('Kuantitas Bertambah ⚡', `Jumlah ${item.nama_barang} di keranjang diperbarui.`, 'info')
+      triggerToast('Kuantitas Bertambah', `Jumlah ${item.nama_barang || item.nama_item || item.name} di keranjang diperbarui.`, 'info')
     } else {
-      triggerToast('Batas Stok Maksimal ⚠️', `Stok barang ini hanya tersedia ${item.stok} unit.`, 'warning')
+      triggerToast('Batas Stok Maksimal', `Stok barang ini hanya tersedia ${itemStock} unit.`, 'warning')
       return
     }
   } else {
-    // Jika belum ada, masukkan item baru
     cart.push({
       id: item.id,
-      nama_barang: item.nama_barang,
-      harga_per_hari: item.harga_per_hari,
+      nama_barang: item.nama_barang || item.nama_item || item.name,
+      harga_per_hari: item.harga_per_hari || item.harga_sewa_per_hari || item.harga,
       foto_barang: getImageUrl(item.foto_barang || item.gambar),
       qty: 1,
       lama_sewa: 1
     })
-    triggerToast('Masuk Keranjang ✨', `${item.nama_barang} siap untuk diproses.`, 'success')
+    triggerToast('Masuk Keranjang', `${item.nama_barang || item.nama_item || item.name} berhasil ditambahkan.`, 'success')
   }
 
-  // Simpan kembali ke LocalStorage
   localStorage.setItem('cart_items', JSON.stringify(cart))
+  window.dispatchEvent(new Event('cart-updated'))
 }
 
-// Jalankan fetch data saat halaman di-load
 onMounted(() => {
-  fetchProducts()
+  fetchData()
+  window.addEventListener('filter-category', handleExternalFilter)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('filter-category', handleExternalFilter)
 })
 </script>
 
 <template>
-  <section class="katalog-container">
+  <section class="katalog-container" id="katalog">
     <div class="header-section">
-      <h2>🔥 Katalog Alat Camping</h2>
-      <p>Pilih perlengkapan outdoor berkualitas untuk petualanganmu</p>
+      <h2>Katalog Alat Camping</h2>
+      <p>Pilih perlengkapan outdoor berkualitas untuk petualangan Anda</p>
+
+      <!-- Filter Tab Kategori -->
+      <div v-if="categories.length > 0" class="category-tabs">
+        <button 
+          type="button"
+          :class="['tab-btn', { active: selectedCategoryId === null }]" 
+          @click="filterCategory(null)"
+        >
+          Semua
+        </button>
+
+        <button 
+          v-for="cat in categories" 
+          :key="cat.id" 
+          type="button"
+          :class="['tab-btn', { active: String(selectedCategoryId) === String(cat.id) }]" 
+          @click="filterCategory(cat.id)"
+        >
+          {{ cat.nama_kategori || cat.nama || cat.name }}
+        </button>
+      </div>
     </div>
 
     <!-- State Loading -->
@@ -126,65 +174,59 @@ onMounted(() => {
 
     <!-- State Error -->
     <div v-else-if="errorMessage" class="state-container error-text">
-      <p>⚠️ {{ errorMessage }}</p>
-      <button @click="fetchProducts" class="btn-retry">Coba Lagi</button>
+      <p>{{ errorMessage }}</p>
+      <button @click="fetchData" class="btn-retry">Coba Lagi</button>
     </div>
 
     <!-- State Data Kosong -->
-    <div v-else-if="products.length === 0" class="state-container">
-      <p>Belum ada alat camping yang tersedia saat ini.</p>
+    <div v-else-if="filteredProducts.length === 0" class="state-container">
+      <p>Belum ada alat camping yang tersedia untuk kategori ini.</p>
     </div>
 
     <!-- Grid Produk -->
     <div v-else class="product-grid">
-      <div v-for="item in products" :key="item.id" class="product-card">
+      <div v-for="item in filteredProducts" :key="item.id" class="product-card">
         <div class="image-wrapper">
-          <!-- Menggunakan foto_barang atau gambar sesuai model Laravel -->
           <img 
             :src="getImageUrl(item.foto_barang || item.gambar)" 
-            :alt="item.nama_barang" 
+            :alt="item.nama_barang || item.nama_item || item.name" 
           />
-          <!-- Menggunakan relasi category sesuai fungsi relasi di Model -->
           <span class="badge-kategori">
-            {{ item.category?.nama_kategori || item.category?.nama || 'Perlengkapan' }}
+            {{ item.category?.nama_kategori || item.kategori?.nama_kategori || item.category?.nama || 'Perlengkapan' }}
           </span>
         </div>
 
         <div class="card-body">
-          <!-- Menggunakan nama_barang -->
           <h3 class="product-title">
-            {{ item.nama_barang || 'Tanpa Nama' }}
+            {{ item.nama_barang || item.nama_item || item.name || 'Tanpa Nama' }}
           </h3>
           
-          <!-- Menggunakan stok -->
           <div class="stock-info">
             <span>Stok: <strong>{{ item.stok ?? 0 }}</strong></span>
           </div>
 
           <div class="card-footer">
             <div class="price">
-              <!-- Menggunakan harga_per_hari -->
               <span class="price-val">
-                {{ formatRupiah(item.harga_per_hari) }}
+                {{ formatRupiah(item.harga_per_hari || item.harga_sewa_per_hari || item.harga) }}
               </span>
               <span class="price-unit">/hari</span>
             </div>
             
-            <!-- Event Handler Click -->
             <button 
               type="button"
               class="btn-cart" 
               @click="addToCart(item)"
-              :disabled="item.stok <= 0"
+              :disabled="(item.stok ?? 0) <= 0"
             >
-              {{ item.stok > 0 ? '+ Keranjang' : 'Habis' }}
+              {{ (item.stok ?? 0) > 0 ? '+ Keranjang' : 'Habis' }}
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Toast Notification Melayang Elegan -->
+    <!-- Toast Notification -->
     <transition name="toast-slide">
       <div v-if="toast.show" :class="['custom-toast', toast.type]">
         <div class="toast-content">
@@ -222,6 +264,39 @@ onMounted(() => {
 .header-section p {
   color: #666;
   font-size: 0.95rem;
+}
+
+.category-tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.tab-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: #f1f5f9;
+  border-color: #2ec4b6;
+  color: #0d9488;
+}
+
+.tab-btn.active {
+  background: #0d9488;
+  color: #ffffff;
+  border-color: #0d9488;
 }
 
 .state-container {
@@ -268,9 +343,9 @@ onMounted(() => {
 
 .product-card {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -278,14 +353,14 @@ onMounted(() => {
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 .image-wrapper {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 190px;
   background-color: #f0f0f0;
 }
 
@@ -299,13 +374,12 @@ onMounted(() => {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.75);
   color: #fff;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .card-body {
@@ -318,14 +392,14 @@ onMounted(() => {
 .product-title {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #222;
+  color: #1e293b;
   margin-bottom: 6px;
   line-height: 1.3;
 }
 
 .stock-info {
   font-size: 0.8rem;
-  color: #777;
+  color: #64748b;
   margin-bottom: 12px;
 }
 
@@ -335,18 +409,18 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #f1f5f9;
 }
 
 .price-val {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #2ec4b6;
+  color: #0d9488;
 }
 
 .price-unit {
   font-size: 0.75rem;
-  color: #888;
+  color: #64748b;
 }
 
 .btn-cart {
@@ -354,11 +428,11 @@ onMounted(() => {
   color: #ffffff;
   border: none;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s;
 }
 
 .btn-cart:hover:not(:disabled) {
@@ -366,91 +440,47 @@ onMounted(() => {
 }
 
 .btn-cart:disabled {
-  background: #ccc;
+  background: #cbd5e1;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-/* --- Toast Notification Styles --- */
+/* Toast Styles */
 .custom-toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 9999;
-  min-width: 280px;
-  max-width: 360px;
-  padding: 14px 18px;
-  border-radius: 12px;
+  min-width: 260px;
+  max-width: 340px;
+  padding: 12px 16px;
+  border-radius: 8px;
   background: #ffffff;
-  color: #2b2b2b;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-  border-left: 5px solid #2ec4b6;
+  color: #1e293b;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #0d9488;
   display: flex;
   align-items: center;
 }
 
-.custom-toast.success {
-  border-left-color: #2ec4b6;
-}
+.custom-toast.success { border-left-color: #0d9488; }
+.custom-toast.warning { border-left-color: #ef4444; }
+.custom-toast.info { border-left-color: #ff9f1c; }
 
-.custom-toast.warning {
-  border-left-color: #e63946;
-}
+.toast-content { display: flex; flex-direction: column; }
+.toast-title { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+.toast-message { font-size: 0.8rem; color: #64748b; margin: 0; }
 
-.custom-toast.info {
-  border-left-color: #ff9f1c;
-}
-
-.toast-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.toast-title {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #1a1a1a;
-  margin-bottom: 2px;
-}
-
-.toast-message {
-  font-size: 0.8rem;
-  color: #666;
-  margin: 0;
-}
-
-/* Toast Animation */
 .toast-slide-enter-active,
-.toast-slide-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-slide-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.toast-slide-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
+.toast-slide-leave-active { transition: all 0.3s ease; }
+.toast-slide-enter-from,
+.toast-slide-leave-to { opacity: 0; transform: translateY(20px); }
 
 @media (max-width: 1024px) {
-  .product-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {
-  .product-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-  
-  .custom-toast {
-    right: 16px;
-    bottom: 16px;
-    left: 16px;
-    max-width: none;
-  }
+  .product-grid { grid-template-columns: repeat(1, 1fr); }
+  .custom-toast { right: 16px; bottom: 16px; left: 16px; max-width: none; }
 }
 </style>

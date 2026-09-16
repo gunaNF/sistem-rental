@@ -32,8 +32,8 @@ const updateCartCount = () => {
 }
 
 const checkAuth = () => {
-  const token = localStorage.getItem('access_token')
-  const userStr = localStorage.getItem('user_data')
+  const token = localStorage.getItem('access_token') || localStorage.getItem('token')
+  const userStr = localStorage.getItem('user_data') || localStorage.getItem('user')
   const roleStr = localStorage.getItem('user_role')
 
   if (token) {
@@ -100,6 +100,11 @@ const goToAdminDashboard = () => {
   router.push('/admin/dashboard')
 }
 
+const goToProfile = () => {
+  isMenuOpen.value = false
+  router.push('/profil')
+}
+
 const goToMyRentals = () => {
   isMenuOpen.value = false
   router.push('/sewa-saya')
@@ -113,7 +118,9 @@ const goToCart = () => {
 const handleLogout = () => {
   isMenuOpen.value = false
   localStorage.removeItem('access_token')
+  localStorage.removeItem('token')
   localStorage.removeItem('user_data')
+  localStorage.removeItem('user')
   localStorage.removeItem('user_role')
   isLoggedIn.value = false
   window.location.reload()
@@ -143,7 +150,7 @@ const handleLogout = () => {
         </div>
 
         <nav class="nav-links">
-          <a href="#katalog">Kategori ▾</a>
+          <a href="#katalog">Katalog</a>
           <router-link to="/cara-sewa">Cara Sewa</router-link>
           <a href="#lokasi">Lokasi Pick-up</a>
 
@@ -216,10 +223,10 @@ const handleLogout = () => {
 
           <!-- Jika Sudah Login -->
           <template v-else>
-            <!-- 1. Label Nama User -->
-            <div class="user-pill">
+            <!-- 1. Label Nama User (Bisa Diklik Langsung ke Profil) -->
+            <router-link to="/profil" class="user-pill user-pill-link">
               👤 {{ userName }}
-            </div>
+            </router-link>
 
             <!-- 2. Tombol Titik Tiga & Dropdown Menu -->
             <div class="dropdown-wrapper">
@@ -237,6 +244,15 @@ const handleLogout = () => {
                   class="dropdown-item"
                 >
                   ⚙️ Dashboard Admin
+                </button>
+
+                <!-- Menuju Halaman Profil User -->
+                <button 
+                  type="button" 
+                  @click="goToProfile" 
+                  class="dropdown-item"
+                >
+                  👤 Profil Saya
                 </button>
 
                 <!-- Menuju Riwayat Transaksi/Sewa User -->
@@ -514,6 +530,17 @@ const handleLogout = () => {
   font-size: 0.85rem;
   font-weight: 700;
   color: #ffffff;
+}
+
+.user-pill-link {
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.user-pill-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 /* Wrapper Dropdown */

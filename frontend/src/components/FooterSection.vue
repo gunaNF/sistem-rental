@@ -21,7 +21,7 @@ const scrollToTop = () => {
         
         <div class="contact-details">
           <p class="address">
-            📍 Jl. H. Jian No.38, RT.9/RW.3, Cipete Utara, Kec. Kby. Baru, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12150
+            📍 Jl. Cisirung No.118, Cangkuang Kulon, Kec. Dayeuhkolot, Kabupaten Bandung, Jawa Barat 40239
           </p>
           <p class="hours">
             🕒 Setiap hari, 09:00 - 20:00 WIB

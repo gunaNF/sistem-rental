@@ -13,8 +13,9 @@ const fetchItems = async () => {
   errorMessage.value = ''
   try {
     const response = await api.get('/items')
-    items.value = response.data.data || response.data
+    items.value = response.data.data || response.data || []
   } catch (error) {
+    console.error('Fetch Items Error:', error)
     errorMessage.value = error.response?.data?.message || 'Gagal mengambil data items dari server.'
   } finally {
     isLoading.value = false
@@ -27,8 +28,9 @@ const deleteItem = async (id, namaItem) => {
 
   try {
     await api.delete(`/items/${id}`)
-    items.value = items.value.filter(item => item.id !== id)
+    fetchItems()
   } catch (error) {
+    console.error('Delete Item Error:', error)
     alert(error.response?.data?.message || 'Gagal menghapus item.')
   }
 }
@@ -40,7 +42,7 @@ onMounted(() => {
 
 <template>
   <div class="kelola-container">
-    <!-- Header Page -->
+    <!-- Header Section -->
     <div class="page-header">
       <div>
         <router-link to="/admin/dashboard" class="btn-back">← Kembali ke Dashboard</router-link>
@@ -53,7 +55,7 @@ onMounted(() => {
     </div>
 
     <!-- Alert Error -->
-    <div v-if="errorMessage" class="error-alert">
+    <div v-if="errorMessage" class="error-box">
       ⚠️ {{ errorMessage }}
     </div>
 
@@ -62,13 +64,13 @@ onMounted(() => {
       <table class="crud-table">
         <thead>
           <tr>
-            <th width="60">ID</th>
-            <th width="80">Foto</th>
+            <th style="width: 80px;">No</th>
+            <th style="width: 80px;">Foto</th>
             <th>Nama Item</th>
             <th>Kategori</th>
             <th>Harga Sewa / Hari</th>
             <th>Stok</th>
-            <th width="160" class="text-center">Aksi</th>
+            <th style="width: 160px;" class="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -83,8 +85,8 @@ onMounted(() => {
           </tr>
 
           <!-- Data Items dari API -->
-          <tr v-else v-for="item in items" :key="item.id">
-            <td class="text-muted">#{{ item.id }}</td>
+          <tr v-else v-for="(item, index) in items" :key="item.id || index">
+            <td class="text-muted">#{{ index + 1 }}</td>
             
             <!-- Kolom Foto Barang -->
             <td>
@@ -144,17 +146,23 @@ onMounted(() => {
 }
 
 .btn-back {
-  display: inline-block;
-  color: #2ec4b6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e0f2fe;
+  color: #0284c7;
   text-decoration: none;
+  font-size: 0.85rem;
   font-weight: 700;
-  font-size: 0.88rem;
-  margin-bottom: 8px;
-  transition: opacity 0.2s;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
 }
 
 .btn-back:hover {
-  opacity: 0.8;
+  background-color: #bae6fd;
+  color: #0369a1;
 }
 
 .page-header h2 {
@@ -187,13 +195,14 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.error-alert {
+.error-box {
   background: #fee2e2;
+  border: 1px solid #fca5a5;
   color: #dc2626;
-  padding: 12px 16px;
+  padding: 12px;
   border-radius: 8px;
-  font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
 }
 
 /* TABLE STYLING */

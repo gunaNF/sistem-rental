@@ -1,61 +1,38 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import api from '@/services/api'
 
 const users = ref([])
-const loading = ref(false)
+const isLoading = ref(true)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// 1. Ambil Data User dari API Temanmu
+// 1. Ambil Data User dari API
 const fetchUsers = async () => {
-  loading.value = true
+  isLoading.value = true
   errorMessage.value = ''
   try {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch('http://127.0.0.1:8000/api/users', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    })
-    const responseData = await res.json()
-    if (res.ok) {
-      // Sesuaikan nama field 'data' dengan response dari BE temenmu
-      users.value = responseData.data || responseData
-    } else {
-      errorMessage.value = responseData.message || 'Gagal mengambil data user.'
-    }
+    const response = await api.get('/users')
+    users.value = response.data.data || response.data || []
   } catch (err) {
-    errorMessage.value = 'Tidak dapat terhubung ke server backend.'
+    console.error('Fetch Users Error:', err)
+    errorMessage.value = err.response?.data?.message || 'Gagal memuat data user dari server.'
   } finally {
-    loading.value = false
+    isLoading.value = false
   }
 }
 
 // 2. Fungsi Ubah Peran (Admin / Customer)
 const handleRoleChange = async (user, newRole) => {
   try {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`http://127.0.0.1:8000/api/users/${user.id}/role`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ peran: newRole })
-    })
-
-    const responseData = await res.json()
-    if (res.ok) {
-      user.peran = newRole
-      showSuccess(`Peran ${user.nama} berhasil diubah menjadi ${newRole}`)
-    } else {
-      alert(responseData.message || 'Gagal memperbarui peran user.')
-      fetchUsers() // Reset ke data asli jika gagal
-    }
+    await api.patch(`/users/${user.id}/role`, { peran: newRole })
+    user.peran = newRole
+    showSuccess(`Peran ${user.nama} berhasil diubah menjadi ${newRole}`)
   } catch (err) {
-    alert('Terjadi kesalahan koneksi saat mengubah peran.')
+    console.error('Update Role Error:', err)
+    alert(err.response?.data?.message || 'Gagal memperbarui peran user.')
+    fetchUsers() // Reset ke data asli jika gagal
   }
 }
 
@@ -64,24 +41,12 @@ const handleDeleteUser = async (id, nama) => {
   if (!confirm(`Apakah Anda yakin ingin menghapus akun "${nama}"?`)) return
 
   try {
-    const token = localStorage.getItem('access_token')
-    const res = await fetch(`http://127.0.0.1:8000/api/users/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    })
-
-    const responseData = await res.json()
-    if (res.ok) {
-      users.value = users.value.filter(u => u.id !== id)
-      showSuccess(`User "${nama}" berhasil dihapus.`)
-    } else {
-      alert(responseData.message || 'Gagal menghapus user.')
-    }
+    await api.delete(`/users/${id}`)
+    users.value = users.value.filter(u => u.id !== id)
+    showSuccess(`User "${nama}" berhasil dihapus.`)
   } catch (err) {
-    alert('Terjadi kesalahan koneksi saat menghapus user.')
+    console.error('Delete User Error:', err)
+    alert(err.response?.data?.message || 'Gagal menghapus user.')
   }
 }
 
@@ -98,40 +63,53 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page-container">
-    <div class="header-section">
+  <div class="kelola-container">
+    <!-- Header Section -->
+    <div class="page-header">
       <div>
-        <h2>👥 Kelola Data User</h2>
-        <p>Daftar seluruh akun terdaftar dan hak akses peran pada sistem.</p>
+        <router-link to="/admin/dashboard" class="btn-back">← Kembali ke Dashboard</router-link>
+        <h2>Kelola Data User</h2>
+        <p class="subtitle">Daftar seluruh akun terdaftar dan hak akses peran pada sistem.</p>
       </div>
       <button class="btn-refresh" @click="fetchUsers">🔄 Muat Ulang</button>
     </div>
 
     <!-- Alert Notifikasi -->
-    <div v-if="successMessage" class="alert alert-success">
+    <div v-if="successMessage" class="success-box">
       ✅ {{ successMessage }}
     </div>
-    <div v-if="errorMessage" class="alert alert-danger">
+    <div v-if="errorMessage" class="error-box">
       ⚠️ {{ errorMessage }}
     </div>
 
-    <!-- Table User -->
+    <!-- Table Container -->
     <div class="table-card">
-      <table class="custom-table" v-if="!loading">
+      <table class="crud-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th style="width: 80px;">No</th>
             <th>Nama Lengkap</th>
             <th>Email</th>
             <th>No. Telepon</th>
             <th>Peran (Role)</th>
-            <th class="text-center">Aksi</th>
+            <th style="width: 160px;" class="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in users" :key="user.id">
-            <td>#{{ user.id }}</td>
-            <td><strong>{{ user.nama }}</strong></td>
+          <!-- State Loading -->
+          <tr v-if="isLoading">
+            <td colspan="6" class="text-center empty-msg">Memuat data user...</td>
+          </tr>
+
+          <!-- State Data Kosong -->
+          <tr v-else-if="users.length === 0">
+            <td colspan="6" class="text-center empty-msg">Belum ada data user.</td>
+          </tr>
+
+          <!-- Data Users -->
+          <tr v-else v-for="(user, index) in users" :key="user.id || index">
+            <td class="text-muted">#{{ index + 1 }}</td>
+            <td class="font-bold">{{ user.nama }}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.no_telepon || '-' }}</td>
             <td>
@@ -145,118 +123,143 @@ onMounted(() => {
               </select>
             </td>
             <td class="text-center">
-              <button @click="handleDeleteUser(user.id, user.nama)" class="btn-delete">
-                🗑️ Hapus
-              </button>
+              <div class="action-buttons">
+                <button @click="handleDeleteUser(user.id, user.nama)" class="btn-action delete">
+                  🗑️ Hapus
+                </button>
+              </div>
             </td>
-          </tr>
-          <tr v-if="users.length === 0">
-            <td colspan="6" class="text-center empty-state">Belum ada data user.</td>
           </tr>
         </tbody>
       </table>
-
-      <div v-else class="loading-state">
-        ⏳ Memuat data user...
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Container Utama */
-.page-container {
-  padding: 24px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  color: #1e293b !important; /* Memaksa warna teks utama gelap */
-  background-color: #f8fafc; /* Latar halaman terang */
-  min-height: 100vh;
+.kelola-container {
+  padding: 10px 0;
 }
 
-.header-section {
+.page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-end;
+  margin-bottom: 24px;
 }
 
-.header-section h2 {
-  font-size: 1.5rem;
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: #bae6fd;
+  color: #0369a1;
+}
+
+.page-header h2 {
+  font-size: 1.6rem;
   font-weight: 800;
-  color: #0f172a !important;
+  color: #0f172a;
   margin: 0;
 }
 
-.header-section p {
-  color: #64748b !important;
+.subtitle {
+  color: #64748b;
   font-size: 0.88rem;
   margin-top: 4px;
 }
 
 .btn-refresh {
   background: #ffffff;
-  color: #334155 !important;
+  color: #334155;
   border: 1px solid #cbd5e1;
-  padding: 8px 16px;
+  padding: 9px 16px;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.88rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn-refresh:hover {
   background: #f1f5f9;
 }
 
-/* Alert Notifikasi */
-.alert {
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-weight: 600;
+/* Alert Box */
+.success-box {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #15803d;
+  padding: 12px;
+  border-radius: 8px;
   margin-bottom: 16px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
-.alert-success { background: #dcfce7; color: #15803d !important; }
-.alert-danger { background: #ffe4e6; color: #be123c !important; }
+.error-box {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
 
-/* Kartu Tabel Putih Terang */
+/* TABLE STYLING */
 .table-card {
-  background: #ffffff !important;
+  background: #ffffff;
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   overflow: hidden;
 }
 
-.custom-table {
+.crud-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
-  background-color: #ffffff !important;
-  color: #334155 !important;
 }
 
-.custom-table th, 
-.custom-table td {
+.crud-table th {
+  background: #f8fafc;
   padding: 14px 18px;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 0.9rem;
-  color: #334155 !important; /* Warna teks dalam tabel hitam/abu gelap */
-}
-
-/* Header Tabel */
-.custom-table th {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
+  font-size: 0.8rem;
   font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-/* Efek Hover Baris Tabel */
-.custom-table tbody tr:hover {
-  background-color: #f8fafc !important;
+.crud-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #334155;
+  vertical-align: middle;
 }
 
+.crud-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.text-muted { color: #94a3b8; }
+.font-bold { font-weight: 700; color: #0f172a; }
 .text-center { text-align: center; }
 
 /* Selector Role (Dropdown Admin / Customer) */
@@ -270,39 +273,44 @@ onMounted(() => {
 }
 
 .badge-admin {
-  background-color: #f3e8ff !important;
-  color: #6b21a8 !important;
+  background-color: #f3e8ff;
+  color: #6b21a8;
   border: 1px solid #d8b4fe;
 }
 
 .badge-customer {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
+  background-color: #e0f2fe;
+  color: #0369a1;
   border: 1px solid #bae6fd;
 }
 
-/* Tombol Hapus */
-.btn-delete {
-  background: #fff1f2 !important;
-  color: #e11d48 !important;
-  border: 1px solid #fecdd3;
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-action {
+  border: none;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
 }
 
-.btn-delete:hover {
-  background: #ffe4e6 !important;
-  color: #be123c !important;
+.btn-action.delete {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
-.loading-state, 
-.empty-state {
+.btn-action:hover {
+  opacity: 0.8;
+}
+
+.empty-msg {
   padding: 30px;
-  color: #64748b !important;
-  font-weight: 600;
+  color: #94a3b8;
 }
 </style>

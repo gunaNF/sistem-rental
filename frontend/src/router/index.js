@@ -13,6 +13,8 @@ import CategoriesView from '@/views/Admin/CategoriesView.vue'
 import KelolaUser from '@/views/Admin/User/KelolaUser.vue'
 import CartView from '../views/CartView.vue'
 import CheckoutView from '../views/CheckoutView.vue'
+import KelolaPayment from '@/views/Admin/Payment/KelolaPayment.vue'
+import KelolaRental from '@/views/Admin/Rental/KelolaRental.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeSection },
@@ -20,11 +22,10 @@ const routes = [
   { path: '/register', name: 'register', component: RegisterView, meta: { requiresGuest: true } },
   { path: '/cara-sewa', name: 'cara-sewa', component: CaraSewaSection },
   
-  // Route Keranjang Belanja
+  // Route Keranjang & Checkout Customer
   { path: '/cart', name: 'cart', component: CartView },
-
-  //checkout
   { path: '/checkout', name: 'checkout', component: CheckoutView },
+
   // Rute Admin (Diproteksi)
   {
     path: '/admin',
@@ -37,7 +38,9 @@ const routes = [
       { path: 'items/tambah', name: 'tambah-items', component: TambahItems },
       { path: 'items/edit/:id', name: 'edit-items', component: EditItems, props: true },
       { path: 'kategori', name: 'kelola-kategori', component: CategoriesView },
-      { path: 'users', name: 'kelola-user', component: KelolaUser }
+      { path: 'users', name: 'kelola-user', component: KelolaUser },
+      { path: 'payments', name: 'kelola-payments', component: KelolaPayment },
+      { path: 'rentals', name: 'kelola-rentals', component: KelolaRental }
     ]
   }
 ]
@@ -52,7 +55,6 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('access_token')
   const userRole = localStorage.getItem('user_role')
 
-  // Pastikan token benar-benar valid
   const isValidToken = Boolean(
     token && 
     token !== 'undefined' && 
@@ -64,7 +66,7 @@ router.beforeEach((to, from, next) => {
   const isTargetAdminOnly = to.matched.some(record => record.meta.requiresAdmin)
   const isTargetGuestOnly = to.matched.some(record => record.meta.requiresGuest)
 
-  // 1. Jika sudah terautentikasi dan mencoba buka halaman /login atau /register
+  // 1. Jika sudah login & mencoba buka /login atau /register
   if (isTargetGuestOnly && isValidToken) {
     if (userRole === 'admin') {
       return next({ name: 'admin-dashboard' })
@@ -72,13 +74,13 @@ router.beforeEach((to, from, next) => {
     return next({ name: 'home' })
   }
 
-  // 2. Jika halaman tujuan butuh login tapi token tidak ada/invalid
+  // 2. Jika butuh login tapi belum ada token
   if (isTargetProtected && !isValidToken) {
     alert('Silakan login terlebih dahulu!')
     return next({ name: 'login' })
   }
 
-  // 3. Jika halaman tujuan khusus admin tapi role bukan admin
+  // 3. Jika halaman khusus admin tapi role bukan admin
   if (isTargetAdminOnly && userRole !== 'admin') {
     alert('Akses ditolak! Anda bukan Admin.')
     return next({ name: 'home' })

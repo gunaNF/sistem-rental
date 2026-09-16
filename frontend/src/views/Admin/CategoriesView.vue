@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { RouterLink } from 'vue-router'
+import api from '@/services/api'
 
 const categories = ref([])
 const isLoading = ref(false)
@@ -12,13 +13,13 @@ const isEdit = ref(false)
 const currentId = ref(null)
 const categoryName = ref('')
 
-// Fetch daftar kategori dari backend (Endpoint Public)
+// Fetch daftar kategori dari backend
 const fetchCategories = async () => {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/categories')
-    categories.value = response.data.data || []
+    const response = await api.get('/categories')
+    categories.value = response.data.data || response.data || []
   } catch (err) {
     console.error('Fetch Categories Error:', err)
     errorMessage.value = err.response?.data?.message || 'Gagal memuat daftar kategori.'
@@ -48,25 +49,19 @@ const closeModal = () => {
   showModal.value = false
 }
 
-// Simpan (Tambah/Edit) Kategori (Endpoint Protected Admin)
+// Simpan (Tambah/Edit) Kategori
 const handleSave = async () => {
   if (!categoryName.value.trim()) return
 
   try {
-    const token = localStorage.getItem('access_token')
-    const headers = { 
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    }
-
     if (isEdit.value) {
-      await axios.put(`http://127.0.0.1:8000/api/categories/${currentId.value}`, {
+      await api.put(`/categories/${currentId.value}`, {
         nama_kategori: categoryName.value
-      }, { headers })
+      })
     } else {
-      await axios.post('http://127.0.0.1:8000/api/categories', {
+      await api.post('/categories', {
         nama_kategori: categoryName.value
-      }, { headers })
+      })
     }
 
     closeModal()
@@ -77,18 +72,12 @@ const handleSave = async () => {
   }
 }
 
-// Hapus Kategori (Endpoint Protected Admin)
+// Hapus Kategori
 const handleDelete = async (id) => {
   if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) return
 
   try {
-    const token = localStorage.getItem('access_token')
-    await axios.delete(`http://127.0.0.1:8000/api/categories/${id}`, {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    })
+    await api.delete(`/categories/${id}`)
     fetchCategories()
   } catch (err) {
     console.error('Delete Category Error:', err)
@@ -103,17 +92,17 @@ onMounted(() => {
 
 <template>
   <div class="categories-container">
+    <!-- Header Section -->
     <div class="header-section">
       <div>
-        <router-link to="/admin/dashboard" class="btn-back">
-          ← Kembali ke Dashboard
-        </router-link>
+        <router-link to="/admin/dashboard" class="btn-back">← Kembali ke Dashboard</router-link>
         <h2>Kelola Kategori</h2>
-        <p>Tambahkan atau edit kategori barang rental</p>
+        <p class="subtitle">Tambahkan atau edit kategori barang rental outdoor.</p>
       </div>
       <button class="btn-add" @click="openAddModal">+ Tambah Kategori</button>
     </div>
 
+    <!-- Alert Error -->
     <div v-if="errorMessage" class="error-box">
       ⚠️ {{ errorMessage }}
     </div>
@@ -125,22 +114,24 @@ onMounted(() => {
           <tr>
             <th style="width: 80px;">No</th>
             <th>Nama Kategori</th>
-            <th style="width: 160px; text-align: center;">Aksi</th>
+            <th style="width: 160px;" class="text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="isLoading">
-            <td colspan="3" class="text-center">Memuat data kategori...</td>
+            <td colspan="3" class="text-center empty-msg">Memuat data kategori...</td>
           </tr>
           <tr v-else-if="categories.length === 0">
-            <td colspan="3" class="text-center">Belum ada kategori yang ditambahkan.</td>
+            <td colspan="3" class="text-center empty-msg">Belum ada kategori yang ditambahkan.</td>
           </tr>
-          <tr v-for="(cat, index) in categories" :key="cat.id || index">
-            <td>{{ index + 1 }}</td>
+          <tr v-else v-for="(cat, index) in categories" :key="cat.id || index">
+            <td class="text-muted">#{{ index + 1 }}</td>
             <td class="font-bold">{{ cat.nama_kategori || cat.nama }}</td>
-            <td class="action-buttons">
-              <button class="btn-edit" @click="openEditModal(cat)">Edit</button>
-              <button class="btn-delete" @click="handleDelete(cat.id)">Hapus</button>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button class="btn-action edit" @click="openEditModal(cat)">✏️ Edit</button>
+                <button class="btn-action delete" @click="handleDelete(cat.id)">🗑️ Hapus</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -175,11 +166,7 @@ onMounted(() => {
 
 <style scoped>
 .categories-container {
-  padding: 32px;
-  max-width: 900px;
-  margin: 0 auto;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  color: #1f2937;
+  padding: 10px 0;
 }
 
 .header-section {
@@ -190,110 +177,131 @@ onMounted(() => {
 }
 
 .btn-back {
-  display: inline-block;
-  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e0f2fe;
+  color: #0284c7;
   text-decoration: none;
   font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  transition: color 0.2s;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
 }
 
 .btn-back:hover {
-  color: #1f2937;
+  background-color: #bae6fd;
+  color: #0369a1;
 }
 
 .header-section h2 {
   font-size: 1.6rem;
   font-weight: 800;
+  color: #0f172a;
   margin: 0;
 }
 
-.header-section p {
-  color: #6b7280;
-  margin: 4px 0 0 0;
-  font-size: 0.9rem;
+.subtitle {
+  color: #64748b;
+  font-size: 0.88rem;
+  margin-top: 4px;
 }
 
 .btn-add {
   background: #ff9f1c;
   color: #ffffff;
   border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
+  padding: 10px 18px;
+  border-radius: 8px;
   font-weight: 700;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 4px 10px rgba(255, 159, 28, 0.25);
+  transition: all 0.2s ease;
 }
 
 .btn-add:hover {
-  background: #e88e0e;
+  background: #e08b10;
+  transform: translateY(-2px);
 }
 
 /* Table Styles */
 .table-card {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   overflow: hidden;
-  border: 1px solid #e5e7eb;
 }
 
 .category-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
-}
-
-.category-table th,
-.category-table td {
-  padding: 14px 20px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .category-table th {
-  background: #f9fafb;
-  font-size: 0.85rem;
+  background: #f8fafc;
+  padding: 14px 18px;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #4b5563;
+  color: #475569;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.font-bold {
-  font-weight: 600;
+.category-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #334155;
+  vertical-align: middle;
 }
 
-.text-center {
-  text-align: center;
-  color: #6b7280;
+.category-table tbody tr:hover {
+  background-color: #f8fafc;
 }
+
+.text-muted { color: #94a3b8; }
+.font-bold { font-weight: 700; color: #0f172a; }
+.text-center { text-align: center; }
 
 .action-buttons {
   display: flex;
-  gap: 8px;
   justify-content: center;
+  gap: 8px;
 }
 
-.btn-edit {
-  background: #2ec4b6;
-  color: #ffffff;
+.btn-action {
   border: none;
   padding: 6px 12px;
   border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.8rem;
+  font-weight: 700;
+  font-size: 0.78rem;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
 
-.btn-delete {
-  background: #ef4444;
-  color: #ffffff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
+.btn-action.edit {
+  background: #ffefd5;
+  color: #d97706;
+}
+
+.btn-action.delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-action:hover {
+  opacity: 0.8;
+}
+
+.empty-msg {
+  padding: 30px;
+  color: #94a3b8;
 }
 
 /* Modal Overlay */
@@ -322,6 +330,7 @@ onMounted(() => {
 .modal-card h3 {
   margin: 0 0 20px 0;
   font-size: 1.25rem;
+  color: #0f172a;
 }
 
 .form-group {
@@ -334,6 +343,7 @@ onMounted(() => {
 .form-group label {
   font-size: 0.85rem;
   font-weight: 700;
+  color: #334155;
 }
 
 .form-group input {
@@ -360,7 +370,7 @@ onMounted(() => {
 }
 
 .btn-save {
-  background: #2ec4b6;
+  background: #ff9f1c;
   color: #ffffff;
   border: none;
   padding: 10px 16px;

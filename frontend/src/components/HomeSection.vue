@@ -44,6 +44,10 @@ const checkAuth = () => {
       try {
         const user = JSON.parse(userStr)
         userName.value = user.nama || user.name || 'Customer'
+        // Fallback jika role tersimpan di dalam object user
+        if (!userRole.value && (user.peran || user.role)) {
+          userRole.value = user.peran || user.role
+        }
       } catch (e) {
         userName.value = 'Customer'
       }
@@ -152,7 +156,7 @@ const handleLogout = () => {
         <nav class="nav-links">
           <a href="#katalog">Katalog</a>
           <router-link to="/cara-sewa">Cara Sewa</router-link>
-          <a href="#lokasi">Lokasi Pick-up</a>
+          <a href="https://maps.app.goo.gl/ijtpZ2yuBUHcgJUYA" target="_blank" class="nav-link">Lokasi Pick-up</a>
 
           <!-- Dropdown Kontak -->
           <div class="nav-dropdown" @mouseleave="closeContact">
@@ -176,14 +180,14 @@ const handleLogout = () => {
 
               <!-- Instagram -->
               <a 
-                href="https://instagram.com/forrest.rent" 
+                href="https://instagram.com/whosgun_13" 
                 target="_blank" 
                 class="contact-item"
               >
                 <span class="icon">📸</span>
                 <div class="info">
                   <span class="label">Instagram</span>
-                  <span class="value">@forrest.rent</span>
+                  <span class="value">@whosgun_13</span>
                 </div>
               </a>
 
@@ -271,8 +275,14 @@ const handleLogout = () => {
             </div>
           </template>
           
-          <!-- 3. Tombol Keranjang (Aktif) -->
-          <div class="cart-btn" @click="goToCart" role="button" tabindex="0">
+          <!-- 3. Tombol Keranjang (Disembunyikan Otomatis Jika Role Admin) -->
+          <div 
+            v-if="userRole !== 'admin'" 
+            class="cart-btn" 
+            @click="goToCart" 
+            role="button" 
+            tabindex="0"
+          >
             🛒
             <span class="cart-badge">{{ cartCount }}</span>
           </div>

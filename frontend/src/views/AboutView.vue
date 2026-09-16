@@ -10,11 +10,22 @@
 
       <!-- Hero About -->
       <div class="about-header">
-        <span class="badge">🏕️ Tentang Kami</span>
+        <span class="badge">Tentang Kami</span>
         <h1>Solusi Terbaik Penjelajahan Alam Anda</h1>
         <p>
           ForRest.rent adalah platform penyewaan alat outdoor dan camping tepercaya yang menyediakan peralatan berkualitas premium, bersih, dan siap pakai untuk mendukung petualanganmu.
         </p>
+      </div>
+
+      <!-- Kartu Cerita Pengembang (SMK Assalaam) -->
+      <div class="developer-story-card">
+        <div class="story-icon">🏫</div>
+        <div class="story-content">
+          <h2>Karya Siswa-Siswi SMK Assalaam</h2>
+          <p>
+            Website <strong>ForRest.rent</strong> ini dikembangkan dengan penuh dedikasi oleh dua orang siswa dan siswi <strong>SMK Assalaam</strong> sebagai bentuk implementasi keahlian di bidang rekayasa perangkat lunak. Proyek ini dibuat khusus untuk membantu mendigitalisasi dan mempermudah proses penyewaan alat outdoor, mulai dari pemesanan peralatan, pengecekan stok, hingga manajemen transaksi agar menjadi lebih cepat, transparan, dan efisien.
+          </p>
+        </div>
       </div>
 
       <!-- Grid Keunggulan / Visi Misi -->
@@ -42,13 +53,13 @@
       <div class="info-section">
         <div class="info-card">
           <h2>📍 Lokasi Operasional</h2>
-          <p><strong>Bandung Selatan (BANSEL) & Sekitarnya</strong></p>
+          <p><strong>ForRest.rent Bandung</strong></p>
           <p class="address">
-            Jl. H. Jian No.38, RT.9/RW.3, Cipete Utara, Kebayoran Baru, Jakarta Selatan, DKI Jakarta 12150
+            Jl. Cisirung No.118, Cangkuang Kulon, Kec. Dayeuhkolot, Kabupaten Bandung, Jawa Barat 40239
           </p>
           <div class="operational-hours">
             <span>🕒 Jam Operasional:</span>
-            <strong>Setiap Hari, 09.00 - 20.00 WIB</strong>
+            <strong>Setiap Hari, 09:00 - 20:00 WIB</strong>
           </div>
         </div>
 
@@ -56,8 +67,8 @@
           <h2>📞 Hubungi Kami</h2>
           <p>Punya pertanyaan seputar alat camping atau kerjasama?</p>
           <div class="contact-links">
-            <a href="https://wa.me/6285642194669" target="_blank" class="btn-contact wa">
-              💬 WhatsApp: +62 856-4219-4669
+            <a href="https://wa.me/6287812000155" target="_blank" class="btn-contact wa">
+              💬 WhatsApp: 0878 1200 0155
             </a>
             <a href="mailto:forrest.rent@gmail.com" class="btn-contact email">
               ✉️ Email: forrest.rent@gmail.com
@@ -117,7 +128,7 @@ onMounted(() => {
 .about-header {
   text-align: center;
   max-width: 750px;
-  margin: 0 auto 50px auto;
+  margin: 0 auto 40px auto;
 }
 
 .badge {
@@ -146,11 +157,47 @@ onMounted(() => {
   line-height: 1.6;
 }
 
+.developer-story-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 40px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+}
+
+.story-icon {
+  font-size: 3rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-content h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #38bdf8;
+}
+
+.story-content p {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .features-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 50px;
+  margin-bottom: 40px;
 }
 
 .feature-card {
@@ -255,6 +302,10 @@ onMounted(() => {
 }
 
 @media (max-width: 868px) {
+  .developer-story-card {
+    flex-direction: column;
+    text-align: center;
+  }
   .features-grid, .info-section {
     grid-template-columns: 1fr;
   }

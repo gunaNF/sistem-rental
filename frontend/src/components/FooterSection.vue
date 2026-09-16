@@ -36,18 +36,17 @@ const scrollToTop = () => {
       <div class="footer-col">
         <h3>Informasi</h3>
         <ul>
-          <li><a href="#">Cara sewa</a></li>
-          <li><a href="#">Cara jadi member</a></li>
-          <li><a href="#">Cara pengembalian</a></li>
-          <li><a href="#">Syarat dan Ketentuan</a></li>
+          <li><router-link to="/cara-sewa">Cara sewa</router-link></li>
+          <li><router-link to="/cara-pengembalian">Cara pengembalian</router-link></li>
+          <li><router-link to="/syarat-ketentuan">Syarat dan Ketentuan</router-link></li>
         </ul>
       </div>
 
-      <!-- Kolom 3: Tentang Foresta -->
+      <!-- Kolom 3: Tentang ForRest.rent -->
       <div class="footer-col">
         <h3>Tentang ForRest.rent</h3>
         <ul>
-          <li><a href="#">Tentang Kami</a></li>
+          <li><router-link to="/tentang-kami">Tentang Kami</router-link></li>
         </ul>
       </div>
 
@@ -55,7 +54,7 @@ const scrollToTop = () => {
       <div class="footer-col">
         <h3>Layanan Bantuan</h3>
         <ul>
-          <li><a href="#">Kontak Kami</a></li>
+          <li><router-link to="/tentang-kami">Kontak Kami</router-link></li>
         </ul>
 
         <div class="wa-box">

@@ -26,12 +26,12 @@ const fetchRentals = async () => {
   }
 }
 
-// 2. Update Status Transaksi Sewa
+// 2. Update Status Transaksi Sewa (Diubah dari patch ke put)
 const updateStatus = async (id, statusBaru) => {
   if (!confirm(`Ubah status transaksi menjadi "${statusBaru}"?`)) return
 
   try {
-    await api.patch(`/rentals/${id}/status`, { status_transaksi: statusBaru })
+    await api.put(`/rentals/${id}/status`, { status_transaksi: statusBaru })
     const item = rentals.value.find(r => r.id === id)
     if (item) item.status_transaksi = statusBaru
 
@@ -248,6 +248,7 @@ onMounted(() => {
                   <option value="menunggu">Menunggu</option>
                   <option value="disewa">Disewa</option>
                   <option value="selesai">Selesai</option>
+                  <option value="terlambat">Terlambat</option>
                   <option value="dibatalkan">Dibatalkan</option>
                 </select>
               </div>
@@ -303,6 +304,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.status-badge.terlambat { background: #fee2e2; color: #dc2626; }
 .kelola-container {
   padding: 10px 0;
 }

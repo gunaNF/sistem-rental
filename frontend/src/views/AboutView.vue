@@ -19,6 +19,20 @@
         </p>
       </div>
 
+      <!-- Kartu Filosofi Nama ForRest.rent -->
+      <div class="developer-story-card">
+        <div class="story-glow"></div>
+        <div class="story-icon-box">
+          <span class="story-emoji">🌲</span>
+        </div>
+        <div class="story-content">
+          <h2>Filosofi & Arti "ForRest.rent"</h2>
+          <p>
+            Nama <strong>ForRest.rent</strong> merupakan gabungan dari kata <em>"Forest"</em> (hutan) yang melambangkan alam bebas, dan <em>"Rent"</em> (penyewaan). Selain itu, nama ini juga bermakna <strong>"For Rest"</strong> — sebagai penyedia perlengkapan andal yang memastikan kenyamanan dan keamanan istirahatmu di alam bebas.
+          </p>
+        </div>
+      </div>
+
       <!-- Kartu Cerita Pengembang (SMK Assalaam) -->
       <div class="developer-story-card">
         <div class="story-glow"></div>
@@ -26,9 +40,9 @@
           <span class="story-emoji">🏫</span>
         </div>
         <div class="story-content">
-          <h2>Karya Siswa-Siswi SMK Assalaam</h2>
+          <h2>Karya 2 Siswa SMK Assalaam Kelas 12 RPL 1</h2>
           <p>
-            Website <strong>ForRest.rent</strong> ini dikembangkan dengan penuh dedikasi oleh siswa-siswi <strong>SMK Assalaam</strong> sebagai bentuk implementasi keahlian di bidang rekayasa perangkat lunak. Proyek ini dibuat khusus untuk mendigitalisasi dan mempermudah proses penyewaan alat outdoor, mulai dari pemesanan peralatan, pengecekan stok, hingga manajemen transaksi agar menjadi lebih cepat, transparan, dan efisien.
+            Website <strong>ForRest.rent</strong> ini dikembangkan dengan penuh dedikasi oleh <strong>2 orang siswa SMK Assalaam kelas XII RPL 1</strong> sebagai bentuk implementasi keahlian rekayasa perangkat lunak. Proyek ini mendigitalisasi proses penyewaan alat outdoor agar pemesanan, pengecekan stok, dan transaksi menjadi lebih cepat serta transparan.
           </p>
         </div>
       </div>
@@ -139,7 +153,7 @@ onMounted(() => {
 .about-header {
   text-align: center;
   max-width: 750px;
-  margin: 0 auto 50px auto;
+  margin: 0 auto 40px auto;
 }
 
 .badge-wrapper {
@@ -178,13 +192,13 @@ onMounted(() => {
   position: relative;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #ffffff;
-  padding: 36px;
+  padding: 32px;
   border-radius: 20px;
   display: flex;
   align-items: center;
-  gap: 28px;
-  margin-bottom: 40px;
-  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+  gap: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -202,22 +216,21 @@ onMounted(() => {
 
 .story-icon-box {
   flex-shrink: 0;
-  width: 75px;
-  height: 75px;
+  width: 70px;
+  height: 70px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.05);
+  font-size: 2rem;
 }
 
 .story-content h2 {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #38bdf8;
   letter-spacing: -0.3px;
 }
@@ -225,7 +238,7 @@ onMounted(() => {
 .story-content p {
   font-size: 0.95rem;
   color: #cbd5e1;
-  line-height: 1.7;
+  line-height: 1.6;
   margin: 0;
 }
 
@@ -234,6 +247,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+  margin-top: 30px;
   margin-bottom: 40px;
 }
 

@@ -87,7 +87,7 @@ onMounted(() => {
             <th>Penyewa</th>
             <th>Metode Bayar</th>
             <th>Jumlah Bayar</th>
-            <th>Bukti Transfer</th>
+            <th>Bukti Identitas</th>
             <th>Tanggal Bayar</th>
             <th>Status</th>
             <th style="width: 180px;" class="text-center">Aksi Verifikasi</th>

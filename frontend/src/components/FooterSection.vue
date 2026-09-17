@@ -59,8 +59,8 @@ const scrollToTop = () => {
 
         <div class="wa-box">
           <span class="wa-label">📞 WhatsApp Kami</span>
-          <a href="https://wa.me/6287812000155" target="_blank" class="wa-number">
-            0878 1200 0155
+          <a href="https://wa.me/6285642194669" target="_blank" class="wa-number">
+            0856 4219 4669
           </a>
         </div>
       </div>

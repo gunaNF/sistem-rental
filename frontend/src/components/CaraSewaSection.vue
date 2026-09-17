@@ -35,6 +35,13 @@ const steps = [
 
 <template>
   <section class="cara-sewa-page">
+    <!-- Tombol Kembali ke Beranda -->
+    <div class="nav-back-container">
+      <router-link to="/" class="btn-back">
+        ← Kembali ke Beranda
+      </router-link>
+    </div>
+
     <!-- Header Banner Cerah -->
     <div class="banner-wrapper">
       <div class="banner-content">
@@ -94,12 +101,42 @@ const steps = [
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+/* Tombol Kembali */
+.nav-back-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 0 24px;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.btn-back:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 /* Banner Header */
 .banner-wrapper {
   background: #ffffff;
-  padding: 60px 24px 40px;
+  padding: 40px 24px 40px;
   text-align: center;
   border-bottom: 1px solid #e2e8f0;
+  margin-top: 16px;
 }
 
 .banner-content {
@@ -300,4 +337,4 @@ const steps = [
     text-align: center;
   }
 }
-</style>
+</style>  

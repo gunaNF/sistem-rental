@@ -27,13 +27,13 @@
           </p>
         </div>
 
-        <div class="step-card">
-          <div class="step-number">2</div>
-          <h3>Bersihkan Secara Mandiri</h3>
-          <p>
-            Bersihkan tenda, matras, atau alat masak dari kotoran atau lumpur kasar sebelum dikembalikan dalam keadaan kering untuk mencegah jamur.
-          </p>
-        </div>
+       <div class="step-card">
+  <div class="step-number">2</div>
+  <h3>Pembersihan Ringan / Serahkan ke Toko</h3>
+  <p>
+    Cukup bersihkan sisa lumpur tebal atau kotoran kasar di luar tenda/alat. Urusan cuci bersih selanjutnya akan ditangani langsung oleh tim basecamp ForRest.rent agar alat tetap terawat.
+  </p>
+</div>
 
         <div class="step-card">
           <div class="step-number">3</div>

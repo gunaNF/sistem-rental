@@ -5,6 +5,28 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const cartItems = ref([])
 
+// State untuk Custom Modal (Menggantikan alert bawaan browser)
+const isModalOpen = ref(false)
+const modalTitle = ref('')
+const modalMessage = ref('')
+const modalAction = ref(null) // Menyimpan fungsi callback setelah tombol diklik (misal: redirect ke /login)
+
+// Fungsi untuk memunculkan modal custom yang cantik di tengah
+const showCustomAlert = (title, message, actionCallback = null) => {
+  modalTitle.value = title
+  modalMessage.value = message
+  modalAction.value = actionCallback
+  isModalOpen.value = true
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  if (modalAction.value) {
+    modalAction.value()
+    modalAction.value = null
+  }
+}
+
 // Load data keranjang dari LocalStorage
 const loadCart = () => {
   const savedCart = localStorage.getItem('cart_items')
@@ -61,12 +83,20 @@ const goBack = () => {
 const proceedToCheckout = () => {
   if (cartItems.value.length === 0) return
 
-  // Cek apakah user sudah login dengan memeriksa ketersediaan token
-  const token = localStorage.getItem('token')
+  // Cek apakah user sudah login dengan berbagai kemungkinan key token/sesi
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('access_token') || 
+                localStorage.getItem('auth_token') ||
+                localStorage.getItem('user') ||
+                localStorage.getItem('user_data')
 
   if (!token) {
-    alert('Silakan login terlebih dahulu untuk melanjutkan pesanan.')
-    router.push('/login')
+    // Tampilkan Custom Modal di tengah alih-alih alert() polos
+    showCustomAlert(
+      'Autentikasi Diperlukan', 
+      'Silakan login terlebih dahulu untuk melanjutkan pesanan sewa.', 
+      () => { router.push('/login') }
+    )
     return
   }
 
@@ -168,6 +198,18 @@ onMounted(() => {
             Lanjut ke Checkout →
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM MODAL DI TENGAH (MENGGANTIKAN ALERT POLOS) -->
+    <div v-if="isModalOpen" class="custom-modal-overlay">
+      <div class="custom-modal-card">
+        <div class="modal-icon">🔒</div>
+        <h3>{{ modalTitle }}</h3>
+        <p>{{ modalMessage }}</p>
+        <button type="button" @click="closeModal" class="btn-modal-ok">
+          OK, Masuk Sekarang
+        </button>
       </div>
     </div>
   </div>
@@ -313,7 +355,6 @@ onMounted(() => {
   border: 1px solid #e2e8f0;
 }
 
-/* Styling Dropdown Ukuran di Cart */
 .cart-item-size {
   display: flex;
   align-items: center;
@@ -431,5 +472,78 @@ onMounted(() => {
 .btn-primary:hover, .btn-checkout:hover {
   transform: translateY(-1px);
   background: #f2930f;
+}
+
+/* STYLING UNTUK CUSTOM MODAL DI TENGAH */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.custom-modal-card {
+  background: #ffffff;
+  padding: 32px 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalScaleIn 0.25s ease-out;
+}
+
+.modal-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.custom-modal-card h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.custom-modal-card p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.btn-modal-ok {
+  width: 100%;
+  background: #0d9488;
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-modal-ok:hover {
+  background: #0f766e;
+}
+
+@keyframes modalScaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

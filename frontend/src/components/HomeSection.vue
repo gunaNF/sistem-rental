@@ -156,6 +156,8 @@ const handleLogout = () => {
         <nav class="nav-links">
           <a href="#katalog">Katalog</a>
           <router-link to="/cara-sewa">Cara Sewa</router-link>
+          <router-link to="/syarat-ketentuan">Syarat & Ketentuan</router-link>
+          <router-link to="/cara-pengembalian">Cara Pengembalian</router-link>
           <a href="https://maps.app.goo.gl/ijtpZ2yuBUHcgJUYA" target="_blank" class="nav-link">Lokasi Pick-up</a>
 
           <!-- Dropdown Kontak -->

@@ -29,6 +29,14 @@ const removeItem = (index) => {
   saveAndSyncCart()
 }
 
+// Fungsi untuk memperbarui ukuran sepatu langsung di keranjang
+const updateCartItemSize = (index, newSize) => {
+  if (cartItems.value[index]) {
+    cartItems.value[index].ukuran = newSize
+    saveAndSyncCart()
+  }
+}
+
 // Hitung Subtotal per barang (Harga per hari x Jumlah x Durasi)
 const calculateSubtotal = (item) => {
   const qty = item.qty || 1
@@ -49,9 +57,19 @@ const goBack = () => {
   router.push('/')
 }
 
-// Navigasi Langsung ke Halaman Checkout
+// Navigasi ke Checkout dengan Validasi Login
 const proceedToCheckout = () => {
   if (cartItems.value.length === 0) return
+
+  // Cek apakah user sudah login dengan memeriksa ketersediaan token
+  const token = localStorage.getItem('token')
+
+  if (!token) {
+    alert('Silakan login terlebih dahulu untuk melanjutkan pesanan.')
+    router.push('/login')
+    return
+  }
+
   router.push('/checkout')
 }
 
@@ -75,7 +93,7 @@ onMounted(() => {
       <div v-if="cartItems.length === 0" class="empty-cart">
         <div class="empty-icon">🎒</div>
         <h3>Keranjang Anda Masih Kosong</h3>
-        <p>Yuk, cari dan sewa alat camping impianmu sekarang!</p>
+        <p>Yuk, cari dan sewa perlengkapan impianmu sekarang!</p>
         <button type="button" @click="goBack" class="btn-primary">
           Lihat Katalog
         </button>
@@ -96,6 +114,25 @@ onMounted(() => {
               <h4 class="item-title">{{ item.nama_barang || 'Alat Camping' }}</h4>
               <p class="item-price">{{ formatRupiah(item.harga_per_hari) }} / hari</p>
               
+              <!-- PILIHAN UKURAN (DROPDOWN 35-45) & STOK -->
+              <div class="item-meta-badges">
+                <div class="cart-item-size">
+                  <label :for="'cart-size-' + index">Ukuran:</label>
+                  <select 
+                    :id="'cart-size-' + index"
+                    class="cart-size-dropdown"
+                    v-model="item.ukuran" 
+                    @change="updateCartItemSize(index, item.ukuran)"
+                  >
+                    <option disabled value="">Pilih No</option>
+                    <option v-for="num in [35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45]" :key="num" :value="num">
+                      No. {{ num }}
+                    </option>
+                  </select>
+                </div>
+                <span class="badge-meta">Stok Tersedia: <strong>{{ item.stok ?? 0 }}</strong></span>
+              </div>
+
               <div class="item-meta">
                 <span>Jumlah: <strong>{{ item.qty || 1 }}</strong></span>
                 <span v-if="item.lama_sewa"> • Durasi: <strong>{{ item.lama_sewa }} Hari</strong></span>
@@ -257,6 +294,52 @@ onMounted(() => {
   font-weight: 700;
   font-size: 0.9rem;
   margin: 0 0 6px 0;
+}
+
+.item-meta-badges {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.badge-meta {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Styling Dropdown Ukuran di Cart */
+.cart-item-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.cart-size-dropdown {
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background-color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.cart-size-dropdown:focus {
+  outline: none;
+  border-color: #0d9488;
 }
 
 .item-meta {

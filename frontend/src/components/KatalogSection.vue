@@ -8,14 +8,18 @@ const categories = ref([])
 const selectedCategoryId = ref(null) // null = Semua Kategori
 const isLoading = ref(true)
 const errorMessage = ref('')
-const isAdmin = ref(false) // <-- Tambahan state untuk cek admin
+const isAdmin = ref(false)
+
+// State untuk Modal Detail Produk
+const showModal = ref(false)
+const selectedProduct = ref(null)
 
 // State Toast Notification
 const toast = ref({
   show: false,
   title: '',
   message: '',
-  type: 'success' // 'success' | 'warning' | 'info'
+  type: 'success'
 })
 
 // Trigger Notifikasi Toast
@@ -59,7 +63,7 @@ const fetchData = async () => {
     categories.value = resCategories.data?.data || resCategories.data || []
   } catch (error) {
     console.error('Gagal mengambil data katalog:', error)
-    errorMessage.value = 'Gagal memuat katalog alat camping. Pastikan server backend aktif.'
+    errorMessage.value = 'Gagal memuat katalog. Pastikan server backend aktif.'
   } finally {
     isLoading.value = false
   }
@@ -92,9 +96,20 @@ const handleExternalFilter = (event) => {
   }
 }
 
-// Fungsi Tambah Barang ke Keranjang
+// Fungsi Buka Modal Detail Produk
+const openDetailModal = (item) => {
+  selectedProduct.value = item
+  showModal.value = true
+}
+
+// Fungsi Tutup Modal Detail Produk
+const closeModal = () => {
+  showModal.value = false
+  selectedProduct.value = null
+}
+
+// Fungsi Tambah Barang ke Keranjang (Menyertakan Stok & Ukuran)
 const addToCart = (item) => {
-  // Validasi tambahan di frontend: Blokir jika user adalah admin
   if (isAdmin.value) {
     triggerToast('Akses Ditolak', 'Akun admin tidak dapat menyewa barang.', 'warning')
     return
@@ -125,6 +140,8 @@ const addToCart = (item) => {
       nama_barang: item.nama_barang || item.nama_item || item.name,
       harga_per_hari: item.harga_per_hari || item.harga_sewa_per_hari || item.harga,
       foto_barang: getImageUrl(item.foto_barang || item.gambar),
+      stok: itemStock,
+      ukuran: item.ukuran || item.size || item.ukuran_sepatu || 'All Size',
       qty: 1,
       lama_sewa: 1
     })
@@ -139,7 +156,6 @@ onMounted(() => {
   fetchData()
   window.addEventListener('filter-category', handleExternalFilter)
 
-  // Cek role user dari localStorage saat komponen dimuat
   try {
     const userData = JSON.parse(localStorage.getItem('user'))
     if (userData && (userData.peran === 'admin' || userData.role === 'admin')) {
@@ -158,8 +174,8 @@ onUnmounted(() => {
 <template>
   <section class="katalog-container" id="katalog">
     <div class="header-section">
-      <h2>Katalog Alat Camping</h2>
-      <p>Pilih perlengkapan outdoor berkualitas untuk petualangan Anda</p>
+      <h2>Katalog Produk</h2>
+      <p>Pilih perlengkapan berkualitas untuk kebutuhan Anda</p>
 
       <!-- Filter Tab Kategori -->
       <div v-if="categories.length > 0" class="category-tabs">
@@ -186,7 +202,7 @@ onUnmounted(() => {
     <!-- State Loading -->
     <div v-if="isLoading" class="state-container">
       <div class="spinner"></div>
-      <p>Memuat data alat camping...</p>
+      <p>Memuat data produk...</p>
     </div>
 
     <!-- State Error -->
@@ -197,7 +213,7 @@ onUnmounted(() => {
 
     <!-- State Data Kosong -->
     <div v-else-if="filteredProducts.length === 0" class="state-container">
-      <p>Belum ada alat camping yang tersedia untuk kategori ini.</p>
+      <p>Belum ada produk yang tersedia untuk kategori ini.</p>
     </div>
 
     <!-- Grid Produk -->
@@ -209,7 +225,7 @@ onUnmounted(() => {
             :alt="item.nama_barang || item.nama_item || item.name" 
           />
           <span class="badge-kategori">
-            {{ item.category?.nama_kategori || item.kategori?.nama_kategori || item.category?.nama || 'Perlengkapan' }}
+            {{ item.category?.nama_kategori || item.kategori?.nama_kategori || item.category?.nama || 'Umum' }}
           </span>
         </div>
 
@@ -220,6 +236,9 @@ onUnmounted(() => {
           
           <div class="stock-info">
             <span>Stok: <strong>{{ item.stok ?? 0 }}</strong></span>
+            <span v-if="item.ukuran || item.size || item.ukuran_sepatu" class="size-badge">
+              Ukuran: <strong>{{ item.ukuran || item.size || item.ukuran_sepatu }}</strong>
+            </span>
           </div>
 
           <div class="card-footer">
@@ -230,15 +249,78 @@ onUnmounted(() => {
               <span class="price-unit">/hari</span>
             </div>
             
-            <!-- Tombol Keranjang (Disabled jika Admin) -->
-            <button 
-              type="button"
-              class="btn-cart" 
-              @click="addToCart(item)"
-              :disabled="isAdmin || (item.stok ?? 0) <= 0"
-            >
-              {{ isAdmin ? 'Khusus Customer' : ((item.stok ?? 0) > 0 ? '+ Keranjang' : 'Habis') }}
-            </button>
+            <!-- Tombol Aksi (Detail & Keranjang) -->
+            <div class="action-buttons">
+              <!-- Tombol Lihat Detail (Modal) -->
+              <button 
+                type="button"
+                class="btn-detail" 
+                @click="openDetailModal(item)"
+              >
+                Detail
+              </button>
+
+              <!-- Tombol Keranjang -->
+              <button 
+                type="button"
+                class="btn-cart" 
+                @click="addToCart(item)"
+                :disabled="isAdmin || (item.stok ?? 0) <= 0"
+              >
+                {{ isAdmin ? 'Admin' : ((item.stok ?? 0) > 0 ? '+ Keranjang' : 'Habis') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP DETAIL PRODUK -->
+    <div v-if="showModal && selectedProduct" class="modal-overlay" @click.self="closeModal">
+      <div class="modal-content">
+        <button class="modal-close-btn" @click="closeModal">&times;</button>
+        
+        <div class="modal-body-grid">
+          <div class="modal-image-wrapper">
+            <img 
+              :src="getImageUrl(selectedProduct.foto_barang || selectedProduct.gambar)" 
+              :alt="selectedProduct.nama_barang || selectedProduct.nama_item || selectedProduct.name" 
+            />
+          </div>
+          
+          <div class="modal-info-wrapper">
+            <span class="modal-category">
+              {{ selectedProduct.category?.nama_kategori || selectedProduct.kategori?.nama_kategori || 'Kategori' }}
+            </span>
+            
+            <h2>{{ selectedProduct.nama_barang || selectedProduct.nama_item || selectedProduct.name }}</h2>
+            
+            <div class="modal-price">
+              {{ formatRupiah(selectedProduct.harga_per_hari || selectedProduct.harga_sewa_per_hari || selectedProduct.harga) }} <span>/ hari</span>
+            </div>
+
+            <div class="modal-stock">
+              <p>Stok Tersedia: <strong>{{ selectedProduct.stok ?? 0 }} Unit</strong></p>
+              <p v-if="selectedProduct.ukuran || selectedProduct.size || selectedProduct.ukuran_sepatu">
+                Ukuran: <strong>{{ selectedProduct.ukuran || selectedProduct.size || selectedProduct.ukuran_sepatu }}</strong>
+              </p>
+            </div>
+
+            <div class="modal-description">
+              <h4>Deskripsi Produk:</h4>
+              <p>{{ selectedProduct.deskripsi || selectedProduct.description || 'Tidak ada deskripsi tersedia untuk produk ini.' }}</p>
+            </div>
+
+            <div class="modal-actions">
+              <button 
+                type="button" 
+                class="btn-modal-cart" 
+                @click="addToCart(selectedProduct); closeModal()"
+                :disabled="isAdmin || (selectedProduct.stok ?? 0) <= 0"
+              >
+                {{ isAdmin ? 'Admin Tidak Bisa Sewa' : ((selectedProduct.stok ?? 0) > 0 ? '+ Masukkan Keranjang' : 'Stok Habis') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -419,6 +501,16 @@ onUnmounted(() => {
   font-size: 0.8rem;
   color: #64748b;
   margin-bottom: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.size-badge {
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
 }
 
 .card-footer {
@@ -441,6 +533,28 @@ onUnmounted(() => {
   color: #64748b;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn-detail {
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-detail:hover {
+  background: #cbd5e1;
+}
+
 .btn-cart {
   background: #ff9f1c;
   color: #ffffff;
@@ -460,6 +574,179 @@ onUnmounted(() => {
 .btn-cart:disabled {
   background: #cbd5e1;
   cursor: not-allowed;
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: #ffffff;
+  width: 90%;
+  max-width: 750px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: scaleUp 0.25s ease;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: #f1f5f9;
+  border: none;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: #e2e8f0;
+}
+
+.modal-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-image-wrapper {
+  background: #f8fafc;
+  width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-info-wrapper {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-category {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0d9488;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.modal-info-wrapper h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.modal-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0d9488;
+  margin-bottom: 8px;
+}
+
+.modal-price span {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.modal-stock {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-description {
+  margin-bottom: 20px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+}
+
+.modal-description h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.modal-description p {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.modal-actions {
+  margin-top: auto;
+}
+
+.btn-modal-cart {
+  width: 100%;
+  background: #ff9f1c;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-modal-cart:hover:not(:disabled) {
+  background: #e08b12;
+}
+
+.btn-modal-cart:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 /* Toast Styles */
@@ -495,6 +782,11 @@ onUnmounted(() => {
 
 @media (max-width: 1024px) {
   .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .modal-body-grid { grid-template-columns: 1fr; }
+  .modal-image-wrapper { min-height: 200px; }
 }
 
 @media (max-width: 600px) {
